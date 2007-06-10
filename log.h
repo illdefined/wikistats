@@ -24,10 +24,9 @@
 #include <errno.h>
 #include <syslog.h>
 
-#define log(priority, offset, call, errnum) log_((priority), __FILE__, __LINE__, (offset), __func__, (call), (errnum))
-#define catch(expression) if(expression) log(LOG_ERR, 0, #expression, errno) 
-#define debug(expression) if(expression) log(LOG_DEBUG, 0, #expression, errno)
-
-void log_(int priority, const char *file, unsigned int line, signed int offset, const char *function, const char *expression, int errnum);
+#define log(priority, expression)  syslog(priority, "%s[%u]::%s{%s}::{%s}", __FILE__, __LINE__, __func__, expression, strerror(errno))
+#define catch(expression) if(expression) { log(LOG_ERR, #expression); exit(EXIT_FAILURE); }
+#define warn(expression)  if(expression) log(LOG_WARNING, #expression)
+#define debug(expression) if(expression) log(LOG_DEBUG, #expression)
 
 #endif

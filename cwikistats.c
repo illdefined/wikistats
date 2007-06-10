@@ -38,7 +38,6 @@
 #include "hash.h"
 #include "urldecode.h"
 
-const char *dbFile = "/var/db/wikistats/database";
 
 struct {
 	const unsigned char major;
@@ -47,24 +46,74 @@ struct {
 } version = { 0, 2, 0 };
 
 int main(int argc, char *argv[]) {
-	static char readBuffer[4096];
+	char *dbFile = "/var/db/wikistats/database";
 	register int dbHandle;
-	register char *hostname, *sequence, *time, *reqtime, *ip, *squidStatus, *httpStatus, *size, *method, *url, *peer, *mime, *referer, *forwarded, *useragent;
 
-	printf("cwikistats version %hhu.%hhu.%hhu\n"
-		"Copyright © MMVII\n"
-		"\tMikael Voss <ffefd6 at haemoglobin dot org>\n"
-		"\tLeon Weber <leon at leonweber dot de>\n",
-		version.major, version.minor, version.micro);
+	for(register unsigned int iterator = 1; iterator < argc; iterator++) {
+		if(argv[iterator][0] == '-'
+		 && argv[iterator][1] != '\0'
+		 && argv[iterator][2] == '\0') {
+			switch(argv[iterator][1]) {
+				case 'd':
+				 if(++iterator < argc)
+				 	dbFile = argv[iterator];
+				 else {
+				 	fputs("You must specify a path!\n", stderr);
+					exit(EXIT_FAILURE);
+				 }
+				 break;
+
+				case 'h':
+				 printf("usage: %s [options]\n"
+				  "  -d path   Use path as database\n"
+				  "  -h        Issue this help\n"
+				  "  -v        Show version\n",
+				  argv[0]);
+				 exit(EXIT_SUCCESS);
+
+				case 'v':
+				 printf("cwikistats version %hhu.%hhu.%hhu\n"
+				  "\n"
+				  "Copyright © MMVII\n"
+				  "  Mikael Voss <ffefd6 at haemoglobin dot org>\n"
+				  "  Leon Weber <leon at leonweber dot de>\n"
+				  "\n"
+				  "Provided that these terms and disclaimer and all copyright notices\n"
+                                  "are retained or reproduced in an accompanying document, permission\n"
+                                  "is granted to deal in this work without restriction, including un-\n"
+                                  "limited rights to use, publicly perform, distribute, sell, modify,\n"
+                                  "merge, give away, or sublicence.\n"
+                                  "\n"
+                                  "This work is provided \"AS IS\" and WITHOUT WARRANTY of any kind, to\n"
+                                  "the utmost extent permitted by applicable law, neither express nor\n"
+                                  "implied; without malicious intent or gross negligence. In no event\n"
+                                  "may a licensor, author or contributor be held liable for indirect,\n"
+                                  "direct, other damage, loss, or other issues arising in any way out\n"
+                                  "of dealing in the work, even if advised of the possibility of such\n"
+                                  "damage or existence of a defect, except proven that it results out\n"
+                                  "of said person's immediate fault when using the work as intended.\n",
+				  version.major, version.minor, version.micro);
+				 exit(EXIT_SUCCESS);
+
+				default:
+				 fprintf(stderr, "Invalid command line option -%c!\n", argv[iterator][1]);
+				 exit(EXIT_FAILURE);
+			}
+		}
+		else {
+			fprintf(stderr, "Unknown command line argument %s!\n", argv[iterator]);
+			exit(EXIT_FAILURE);
+		}
+	}
 
 	// Alignsize of hash table mapping to page size
 	catch((pageSize = sysconf(_SC_PAGESIZE)) == (unsigned long int) -1);
 
 	// Open system log
-	openlog("cwikistats", LOG_PID | LOG_PERROR, LOG_DAEMON);
+	openlog("cwikistats", LOG_PERROR, LOG_DAEMON);
 
 	// Attempt to lock all memory to avoid paging of perfomance critical stuff
-	catch(mlockall(MCL_CURRENT | MCL_FUTURE));
+	warn(mlockall(MCL_CURRENT | MCL_FUTURE));
 
 	// Open database file
 	catch((dbHandle = open(dbFile, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IROTH)) == -1);
@@ -74,6 +123,9 @@ int main(int argc, char *argv[]) {
 
 	// Establish mapping
 	catch((table = mmap(0, align(entries * sizeof(struct Entry), pageSize), PROT_READ | PROT_WRITE, MAP_SHARED, dbHandle, 0)) == MAP_FAILED);
+
+	static char readBuffer[4096];
+	register char *hostname, *sequence, *time, *reqtime, *ip, *squidStatus, *httpStatus, *size, *method, *url, *peer, *mime, *referer, *forwarded, *useragent;
 
 	while(fgets(readBuffer, sizeof readBuffer, stdin)) {
 		// Tokenize input line

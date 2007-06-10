@@ -1,4 +1,4 @@
-SRC = aux.c cwikistats.c hash.c log.c urldecode.c
+SRC = aux.c cwikistats.c hash.c urldecode.c
 OBJ = ${SRC:.c=.o}
 
 CFLAGS ?= -Os -Wall -std=c99 -pedantic
