@@ -55,21 +55,31 @@ int main(int argc, char *argv[]) {
 		 && argv[iterator][2] == '\0') {
 			switch(argv[iterator][1]) {
 				case 'd':
-				 if(++iterator < argc)
-				 	dbFile = argv[iterator];
-				 else {
+				 if(++iterator >= argc) {
 				 	fputs("You must specify a path!\n", stderr);
-					exit(EXIT_FAILURE);
+				 	exit(EXIT_FAILURE);
 				 }
+				 dbFile = argv[iterator];
 				 break;
 
 				case 'h':
 				 printf("usage: %s [options]\n"
 				  "  -d path   Use path as database\n"
 				  "  -h        Issue this help\n"
+				  "  -n num    Create num buckets\n"
 				  "  -v        Show version\n",
 				  argv[0]);
 				 exit(EXIT_SUCCESS);
+
+				case 'n':
+				 if(++iterator >= argc) {
+				 	fputs("You must specify a number!\n", stderr);
+				 	exit(EXIT_FAILURE);
+				 }
+				 entries = (unsigned long int) atol(argv[iterator]);
+				 break;
+				 
+				 break;
 
 				case 'v':
 				 printf("cwikistats version %hhu.%hhu.%hhu\n"
@@ -116,7 +126,7 @@ int main(int argc, char *argv[]) {
 	warn(mlockall(MCL_CURRENT | MCL_FUTURE));
 
 	// Open database file
-	catch((dbHandle = open(dbFile, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IROTH)) == -1);
+	catch((dbHandle = open(dbFile, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1);
 
 	// Truncate file to appropriate size (well, this fixes these mysterious bus errors...)
 	catch(ftruncate(dbHandle, align(entries * sizeof(struct Entry), pageSize)));	

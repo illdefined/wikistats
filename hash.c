@@ -32,8 +32,7 @@
 #include "log.h"
 
 struct Entry *table;
-//unsigned long int entries = 33554393;
-unsigned long int entries = 16384;
+unsigned long int entries = 32768;
 
 inline uint32_t extract(const uint8_t *data) {
         return (((uint32_t) data[1]) << 8) + ((uint32_t) data[0]);
