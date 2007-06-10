@@ -91,22 +91,22 @@ inline signed char flip(unsigned long int integer) {
 	return (integer % 2) ? -1 : 1;
 }
 
-inline struct Entry *lookup(const unsigned char *key) {
+inline struct Entry *lookup(const char *key) {
 	register unsigned long hashValue;
 	register struct Entry *entry;
 	register unsigned int iterator;
 
-	hashValue = hash(key, strlen(key));
+	hashValue = hash((uint8_t *) key, strlen(key));
 	entry = table + hashValue;
 
 	// Test if bucket is empty
-	if(entry->key == 0) {
-		strncpy(entry->key, key, sizeof(table->key));
+	if(*(entry->key) == '\0') {
+		strncpy((char *) entry->key, key, sizeof(table->key));
 		return entry;
 	}
 
 	// Check for collision
-	if(!strncmp(key, entry->key, sizeof(table->key)))
+	if(!strncmp(key, (char *) entry->key, sizeof(table->key)))
 		return entry;
 
 	// Quadratic probing
@@ -114,20 +114,20 @@ inline struct Entry *lookup(const unsigned char *key) {
 		entry = table + ((hashValue + flip(iterator) * (iterator/2) * (iterator/2)) % entries);
 
 		// Test if bucket is empty
-		if(*(entry->key) == 0) {
-			strncpy(entry->key, key, sizeof(table->key));
+		if(*(entry->key) == '\0') {
+			strncpy((char *) entry->key, key, sizeof(table->key));
 			return entry;
 		}
 
 		// Check for collision
-		if(!strncmp(key, entry->key, sizeof(table->key)))
+		if(!strncmp(key, (char *) entry->key, sizeof(table->key)))
 			return entry;
 	}
 
 	return 0;
 }
 
-bool commit(const unsigned char *key, unsigned long long int value) {
+bool commit(const char *key, unsigned long long int value) {
 	register struct Entry *entry = lookup(key);
 
 	if(entry == 0)
@@ -137,7 +137,7 @@ bool commit(const unsigned char *key, unsigned long long int value) {
 	return true;
 }
 
-bool increase(const unsigned char *key) {
+bool increase(const char *key) {
 	register struct Entry *entry = lookup(key);
 
 	if(entry == 0)

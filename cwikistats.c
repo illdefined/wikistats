@@ -1,7 +1,7 @@
 /*				   
  * Copyright © MMVII
  *      Mikael Voss <ffefd6 at haemoglobin dot org>
- *	Leon Weber <leon at vserver152.mastersystems dot com>
+ *	Leon Weber <leon at leonweber dot de>
  * 
  * Provided that these terms and disclaimer and all copyright notices
  * are retained or reproduced in an accompanying document, permission
@@ -19,6 +19,10 @@
  * of said person's immediate fault when using the work as intended.
  */
 
+// Get rid of these annoying warning when using the bloated GNU libc
+#define _XOPEN_SOURCE
+#define _XOPEN_SOURCE_EXTENDED
+
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -32,29 +36,44 @@
 #include "aux.h"
 #include "log.h"
 #include "hash.h"
+#include "urldecode.h"
 
 const char *dbFile = "/var/db/wikistats/database";
 
+struct {
+	const unsigned char major;
+	const unsigned char minor;
+	const unsigned char micro;
+} version = { 0, 2, 0 };
+
 int main(int argc, char *argv[]) {
 	static char readBuffer[4096];
-	register int dbStream;
-	register int errorNumber;
+	register int dbHandle;
 	register char *hostname, *sequence, *time, *reqtime, *ip, *squidStatus, *httpStatus, *size, *method, *url, *peer, *mime, *referer, *forwarded, *useragent;
 
-	// Align size of hash table mapping to page size
-	catch((pageSize = sysconf(_SC_PAGESIZE)) == (unsigned long int) -1, CRITICAL);
+	printf("cwikistats version %hhu.%hhu.%hhu\n"
+		"Copyright © MMVII\n"
+		"\tMikael Voss <ffefd6 at haemoglobin dot org>\n"
+		"\tLeon Weber <leon at leonweber dot de>\n",
+		version.major, version.minor, version.micro);
+
+	// Alignsize of hash table mapping to page size
+	catch((pageSize = sysconf(_SC_PAGESIZE)) == (unsigned long int) -1);
 
 	// Open system log
 	openlog("cwikistats", LOG_PID | LOG_PERROR, LOG_DAEMON);
 
 	// Attempt to lock all memory to avoid paging of perfomance critical stuff
-	catch(mlockall(MCL_CURRENT | MCL_FUTURE), ERROR);
+	catch(mlockall(MCL_CURRENT | MCL_FUTURE));
 
 	// Open database file
-	catch((dbStream = open(dbFile, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IROTH)) == -1, CRITICAL);
+	catch((dbHandle = open(dbFile, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IROTH)) == -1);
 
-	// MMap database
-	catch((table = mmap(0, align(entries * sizeof(struct Entry), pageSize), PROT_READ | PROT_WRITE, MAP_SHARED, dbStream, 0)) == MAP_FAILED, CRITICAL);
+	// Truncate file to appropriate size (well, this fixes these mysterious bus errors...)
+	catch(ftruncate(dbHandle, align(entries * sizeof(struct Entry), pageSize)));	
+
+	// Establish mapping
+	catch((table = mmap(0, align(entries * sizeof(struct Entry), pageSize), PROT_READ | PROT_WRITE, MAP_SHARED, dbHandle, 0)) == MAP_FAILED);
 
 	while(fgets(readBuffer, sizeof readBuffer, stdin)) {
 		// Tokenize input line
@@ -107,9 +126,11 @@ int main(int argc, char *argv[]) {
 			continue;
 
 		// URL-decode URL
-		catch(!urldecode(url), DEBUG);
+		debug(!urldecode(url));
 
 		// Commit to database
-		catch(!increase(url), ERROR);
+		catch(!increase(url));
 	}
+
+	return 0;
 }

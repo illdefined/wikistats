@@ -25,19 +25,9 @@
 #include <syslog.h>
 
 #define log(priority, offset, call, errnum) log_((priority), __FILE__, __LINE__, (offset), __func__, (call), (errnum))
-#define catch(expression, priority) if(expression) log((priority), 0, #expression, errno) 
+#define catch(expression) if(expression) log(LOG_ERR, 0, #expression, errno) 
+#define debug(expression) if(expression) log(LOG_DEBUG, 0, #expression, errno)
 
-enum Priority {
-	EMERGENCY = LOG_EMERG,
-	ALERT = LOG_ALERT,
-	CRITICAL = LOG_CRIT,
-	ERROR = LOG_ERR,
-	WARNING = LOG_WARNING,
-	NOTICE = LOG_NOTICE,
-	INFO = LOG_INFO,
-	DEBUG = LOG_DEBUG
-};
-
-void log_(enum Priority priority, const char *file, unsigned int line, signed int offset, const char *function, const char *expression, int errnum);
+void log_(int priority, const char *file, unsigned int line, signed int offset, const char *function, const char *expression, int errnum);
 
 #endif

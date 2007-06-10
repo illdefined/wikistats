@@ -1,7 +1,7 @@
 /*                                   
  * Copyright © MMVII
  *      Mikael Voss <ffefd6 at haemoglobin dot org>
- *      Leon Weber <leon at vserver152.mastersystems dot com>
+ *      Leon Weber <leon at leonweber dot de>
  * 
  * Provided that these terms and disclaimer and all copyright notices
  * are retained or reproduced in an accompanying document, permission
@@ -19,6 +19,7 @@
  * of said person's immediate fault when using the work as intended.
  */
 
+#include <errno.h>
 #include <stdlib.h>
 
 #include "urldecode.h"
@@ -41,14 +42,18 @@ bool urldecode(char *low) {
 	while(*high) {
 		if(*high == '%') {
 			// Check for premature string end
-			if(!*++high || !*(high+1))
+			if(!*++high || !*(high+1)) {
+				errno = EINVAL;
 				return false;
+			}
 
 			character = hexToChar(*high) * 0x10 + hexToChar(*++high);
 
 			// Reject illegal characters
-			if(character <= 0x1F)
+			if(character <= 0x1F) {
+				errno = EINVAL;
 				return false;
+			}
 
 			*low = character;
 		}

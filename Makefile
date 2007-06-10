@@ -1,7 +1,7 @@
 SRC = aux.c cwikistats.c hash.c log.c urldecode.c
 OBJ = ${SRC:.c=.o}
 
-CFLAGS += -Os -Wall
+CFLAGS ?= -Os -Wall -std=c99 -pedantic
 
 all: cwikistats
 

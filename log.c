@@ -24,17 +24,6 @@
 
 #include "log.h"
 
-void log_(enum Priority priority, const char *file, unsigned int line, signed int offset, const char *function, const char *expression, int errnum) {
-	syslog((int) priority, "In file %s, line %u, function %s() while trying \"%s\" in line %u: %s", file, line, function, expression, (unsigned int) line + offset, strerror(errnum));
-
-	switch(priority) {
-		case EMERGENCY:
-			exit(EXIT_FAILURE);
-
-		case CRITICAL:
-			exit(EXIT_FAILURE);
-
-		default:
-			break;
-	}
+void log_(int priority, const char *file, unsigned int line, signed int offset, const char *function, const char *expression, int errnum) {
+	syslog(priority, "In file %s, line %u, function %s() while trying \"%s\" in line %u: %s", file, line, function, expression, (unsigned int) line + offset, strerror(errnum));
 }

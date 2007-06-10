@@ -31,10 +31,8 @@ struct Entry {
 extern struct Entry *table;
 extern unsigned long int entries;
 
-inline unsigned long int primaryHash(const unsigned char *key);
-inline unsigned long int secondayHash(const unsigned char *key);
-inline struct Entry *lookup(const unsigned char *key);
-bool commit(const unsigned char *key, unsigned long long int value);
-bool increase(const unsigned char *key);
+inline struct Entry *lookup(const char *key);
+bool commit(const char *key, unsigned long long int value);
+bool increase(const char *key);
 
 #endif
