@@ -86,11 +86,10 @@ int main(int argc, char *argv[]) {
 				 	fputs("You must specify a number!\n", stderr);
 				 	exit(EXIT_FAILURE);
 				 }
+				 // No checking needed - if entries is invalid, it will fail anyway!
 				 entries = (unsigned long int) atol(argv[iterator]);
 				 break;
 				 
-				 break;
-
 				case 'v':
 				 printf("cwikistats version %hhu.%hhu.%hhu\n"
 				  "\n"
