@@ -38,7 +38,7 @@ inline uint32_t extract(const uint8_t *data) {
         return (((uint32_t) data[1]) << 8) + ((uint32_t) data[0]);
 }
 
-uint32_t hash(const uint8_t *data, unsigned long int length) {
+inline uint32_t hash(const uint8_t *data, unsigned long int length) {
         register uint32_t hash = length;
         register uint32_t temp;
         register unsigned long int remaining;
@@ -93,7 +93,6 @@ inline signed char flip(unsigned long int integer) {
 inline struct Entry *lookup(const char *key) {
 	register unsigned long hashValue;
 	register struct Entry *entry;
-	register unsigned int iterator;
 
 	hashValue = hash((uint8_t *) key, strlen(key));
 	entry = table + hashValue;
@@ -109,7 +108,7 @@ inline struct Entry *lookup(const char *key) {
 		return entry;
 
 	// Quadratic probing
-	for(iterator = 0; iterator < 64; iterator++) {
+	for(register unsigned int iterator = 0; iterator < 64; iterator++) {
 		entry = table + ((hashValue + flip(iterator) * (iterator/2) * (iterator/2)) % entries);
 
 		// Test if bucket is empty

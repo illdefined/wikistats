@@ -42,7 +42,7 @@ struct {
 	const unsigned char major;
 	const unsigned char minor;
 	const unsigned char micro;
-} version = { 0, 2, 0 };
+} version = { 0, 2, 1 };
 
 long int pageSize;
 

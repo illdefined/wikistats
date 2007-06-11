@@ -25,7 +25,7 @@
 #include "urldecode.h"
 
 // Convert ASCII-character to integer
-unsigned char hexToChar(unsigned char character) {
+inline unsigned char hexToChar(unsigned char character) {
 	if(character >= 0x30 && character <= 0x39)
 		return character-0x30;
 	else if(character >= 0x41 && character <= 0x46)
