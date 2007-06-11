@@ -27,6 +27,11 @@
 #define log(priority, expression)  syslog(priority, "%s[%u]::%s{%s}::{%s}", __FILE__, __LINE__, __func__, expression, strerror(errno))
 #define catch(expression) if(expression) { log(LOG_ERR, #expression); exit(EXIT_FAILURE); }
 #define warn(expression)  if(expression) log(LOG_WARNING, #expression)
-#define debug(expression) if(expression) log(LOG_DEBUG, #expression)
+
+#ifdef DEBUG
+# define debug(expression) if(expression) log(LOG_DEBUG, #expression)
+#else
+# define debug(expression) if(expression)
+#endif
 
 #endif

@@ -33,7 +33,6 @@
 #include <syslog.h>
 #include <unistd.h>
 
-#include "aux.h"
 #include "log.h"
 #include "hash.h"
 #include "urldecode.h"
@@ -44,6 +43,17 @@ struct {
 	const unsigned char minor;
 	const unsigned char micro;
 } version = { 0, 2, 0 };
+
+long int pageSize;
+
+
+inline unsigned long int align(unsigned long int size, unsigned long int alignment) {
+        return (size + alignment - 1ul) & ~(alignment - 1ul);
+}
+
+void synchronize() {
+	debug(msync(table, align(entries * sizeof(struct Entry), (unsigned long int) pageSize), MS_SYNC));
+}
 
 int main(int argc, char *argv[]) {
 	char *dbFile = "/var/db/wikistats/database";
@@ -117,7 +127,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Alignsize of hash table mapping to page size
-	catch((pageSize = sysconf(_SC_PAGESIZE)) == (unsigned long int) -1);
+	catch((pageSize = sysconf(_SC_PAGESIZE)) == -1l);
 
 	// Open system log
 	openlog("cwikistats", LOG_PERROR, LOG_DAEMON);
@@ -129,10 +139,13 @@ int main(int argc, char *argv[]) {
 	catch((dbHandle = open(dbFile, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1);
 
 	// Truncate file to appropriate size (well, this fixes these mysterious bus errors...)
-	catch(ftruncate(dbHandle, align(entries * sizeof(struct Entry), pageSize)));	
+	catch(ftruncate(dbHandle, align(entries * sizeof(struct Entry), (unsigned long int) pageSize)));
 
 	// Establish mapping
-	catch((table = mmap(0, align(entries * sizeof(struct Entry), pageSize), PROT_READ | PROT_WRITE, MAP_SHARED, dbHandle, 0)) == MAP_FAILED);
+	catch((table = mmap(0, align(entries * sizeof(struct Entry), (unsigned long int) pageSize), PROT_READ | PROT_WRITE, MAP_SHARED, dbHandle, 0)) == MAP_FAILED);
+
+	// Flush changes on exit
+	atexit(synchronize);
 
 	static char readBuffer[4096];
 	register char *hostname, *sequence, *time, *reqtime, *ip, *squidStatus, *httpStatus, *size, *method, *url, *peer, *mime, *referer, *forwarded, *useragent;
