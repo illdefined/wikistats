@@ -1,14 +1,14 @@
 SRC = cwikistats.c hash.c urldecode.c
 OBJ = ${SRC:.c=.o}
 
-CFLAGS ?= -Os -Wall -std=c99 -pedantic
+CFLAGS ?= -Os
 PREFIX ?= /usr/local
 
 all: cwikistats
 
 .c.o:
 	@echo CC $<
-	@${CC} -c ${CFLAGS} $<
+	@${CC} -c -Wall -std=c99 -pedantic ${CFLAGS} $<
 
 ${OBJ}:
 
