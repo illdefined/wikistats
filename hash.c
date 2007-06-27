@@ -19,11 +19,6 @@
  */
 
 
-/*
- * WARNING: There are some serious bugs in this code that have to be
- * fixed!
- */
-
 #include <errno.h>
 #include <stdint.h>
 #include <string.h>
