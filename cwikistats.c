@@ -1,14 +1,14 @@
-/*				   
+/*
  * Copyright © MMVII
- *      Mikael Voss <ffefd6 at haemoglobin dot org>
- *	Leon Weber <leon at leonweber dot de>
- * 
+ * 	Mikael Voss <ffefd6 at haemoglobin dot org>
+ * 	Leon Weber <leon at leonweber dot de>
+ *
  * Provided that these terms and disclaimer and all copyright notices
  * are retained or reproduced in an accompanying document, permission
  * is granted to deal in this work without restriction, including un-
  * limited rights to use, publicly perform, distribute, sell, modify,
  * merge, give away, or sublicence.
- *	      
+ *
  * This work is provided “AS IS” and WITHOUT WARRANTY of any kind, to
  * the utmost extent permitted by applicable law, neither express nor
  * implied; without malicious intent or gross negligence. In no event
