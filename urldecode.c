@@ -47,7 +47,8 @@ bool urldecode(char *low) {
 				return false;
 			}
 
-			character = hexToChar(*high) * 0x10 + hexToChar(*++high);
+			character = hexToChar(*high) * 0x10;
+			character += hexToChar(*++high);
 
 			// Reject illegal characters
 			if(character <= 0x1F) {

@@ -115,19 +115,19 @@ int main(int argc, char *argv[]) {
 				  "  Leon Weber <leon at leonweber dot de>\n"
 				  "\n"
 				  "Provided that these terms and disclaimer and all copyright notices\n"
-                                  "are retained or reproduced in an accompanying document, permission\n"
-                                  "is granted to deal in this work without restriction, including un-\n"
-                                  "limited rights to use, publicly perform, distribute, sell, modify,\n"
-                                  "merge, give away, or sublicence.\n"
-                                  "\n"
-                                  "This work is provided \"AS IS\" and WITHOUT WARRANTY of any kind, to\n"
-                                  "the utmost extent permitted by applicable law, neither express nor\n"
-                                  "implied; without malicious intent or gross negligence. In no event\n"
-                                  "may a licensor, author or contributor be held liable for indirect,\n"
-                                  "direct, other damage, loss, or other issues arising in any way out\n"
-                                  "of dealing in the work, even if advised of the possibility of such\n"
-                                  "damage or existence of a defect, except proven that it results out\n"
-                                  "of said person's immediate fault when using the work as intended.\n",
+				  "are retained or reproduced in an accompanying document, permission\n"
+				  "is granted to deal in this work without restriction, including un-\n"
+				  "limited rights to use, publicly perform, distribute, sell, modify,\n"
+				  "merge, give away, or sublicence.\n"
+				  "\n"
+				  "This work is provided “AS IS” and WITHOUT WARRANTY of any kind, to\n"
+				  "the utmost extent permitted by applicable law, neither express nor\n"
+				  "implied; without malicious intent or gross negligence. In no event\n"
+				  "may a licensor, author or contributor be held liable for indirect,\n"
+				  "direct, other damage, loss, or other issues arising in any way out\n"
+				  "of dealing in the work, even if advised of the possibility of such\n"
+				  "damage or existence of a defect, except proven that it results out\n"
+				  "of said person's immediate fault when using the work as intended.\n",
 				  version.major, version.minor, version.micro);
 				 exit(EXIT_SUCCESS);
 
