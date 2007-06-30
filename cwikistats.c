@@ -42,7 +42,7 @@ struct {
 	const unsigned char major;
 	const unsigned char minor;
 	const unsigned char micro;
-} version = { 0, 2, 1 };
+} version = { 0, 2, 2 };
 
 long int pageSize;
 
@@ -58,6 +58,9 @@ void synchronize() {
 int main(int argc, char *argv[]) {
 	char *dbFile = "/var/db/wikistats/database";
 	register int dbHandle;
+
+	bool dump = false;
+	unsigned long int minimum = 1;
 
 	for(register unsigned int iterator = 1; iterator < argc; iterator++) {
 		if(argv[iterator][0] == '-'
@@ -76,10 +79,24 @@ int main(int argc, char *argv[]) {
 				 printf("usage: %s [options]\n"
 				  "  -d path   Use path as database\n"
 				  "  -h        Issue this help\n"
+				  "  -l        Dump database\n"
+				  "  -m num    Minimum\n"
 				  "  -n num    Create num buckets\n"
 				  "  -v        Show version\n",
 				  argv[0]);
 				 exit(EXIT_SUCCESS);
+
+				case 'l':
+				 dump = true;
+				 break;
+
+				case 'm':
+				 if(++iterator >= argc) {
+				 	fputs("You must specify a number!\n", stderr);
+				 	exit(EXIT_FAILURE);
+				 }
+				 minimum = strtoul(argv[iterator], (char **) 0, 0);
+				 break;
 
 				case 'n':
 				 if(++iterator >= argc) {
@@ -87,9 +104,9 @@ int main(int argc, char *argv[]) {
 				 	exit(EXIT_FAILURE);
 				 }
 				 // No checking needed - if entries is invalid, it will fail anyway!
-				 entries = (unsigned long int) atol(argv[iterator]);
+				 entries = strtoul(argv[iterator], (char **) 0, 0);
 				 break;
-				 
+				
 				case 'v':
 				 printf("cwikistats version %hhu.%hhu.%hhu\n"
 				  "\n"
@@ -145,6 +162,16 @@ int main(int argc, char *argv[]) {
 
 	// Flush changes on exit
 	atexit(synchronize);
+
+	if(dump) {
+		register struct Entry *current = table;
+		while(current < table + entries) {
+			if(current->value > minimum)
+				printf("%020llu %s\n", current->value, current->key);
+			current++;
+		}
+		exit(EXIT_SUCCESS);
+	}
 
 	static char readBuffer[4096];
 	register char *hostname, *sequence, *time, *reqtime, *ip, *squidStatus, *httpStatus, *size, *method, *url, *peer, *mime, *referer, *forwarded, *useragent;
