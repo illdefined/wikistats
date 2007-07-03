@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
 			continue;
 
 		// URL-decode URL
-		debug(!urldecode(url));
+		debug(!urldecode((unsigned char *) url));
 
 		// Commit to database
 		catch(!increase(url));

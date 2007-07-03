@@ -3,6 +3,6 @@
 
 #include <stdbool.h>
 
-bool urldecode(char *low);
+bool urldecode(unsigned char *low);
 
 #endif
