@@ -24,7 +24,7 @@
 
 #include "urldecode.h"
 
-unsigned char hexChar[256] = {
+const unsigned char hexChar[256] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -62,10 +62,10 @@ unsigned char hexChar[256] = {
 bool urldecode(unsigned char *low) {
 	register unsigned char *high = low;
 	register unsigned char character;
-	while(*high) {
-		if(*high == '%') {
+	while (*high) {
+		if (*high == '%') {
 			// Check for premature string end
-			if(!*++high || !*(high+1)) {
+			if (!*++high || !*(high+1)) {
 				errno = EINVAL;
 				return false;
 			}
@@ -74,7 +74,7 @@ bool urldecode(unsigned char *low) {
 			character += hexChar[*++high];
 
 			// Reject illegal characters
-			if(character <= 0x1F) {
+			if (character <= 0x1F) {
 				errno = EINVAL;
 				return false;
 			}

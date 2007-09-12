@@ -30,54 +30,54 @@ struct Entry *table;
 unsigned long int entries = 32768;
 
 inline uint32_t extract(const uint8_t *data) {
-        return (((uint32_t) data[1]) << 8) + ((uint32_t) data[0]);
+	return (((uint32_t) data[1]) << 8) + ((uint32_t) data[0]);
 }
 
 inline uint32_t hash(const uint8_t *data, unsigned long int length) {
-        register uint32_t hash = length;
-        register uint32_t temp;
-        register unsigned long int remaining;
+	register uint32_t hash = length;
+	register uint32_t temp;
+	register unsigned long int remaining;
 
-        remaining = length & 3;
-        length >>= 2;
+	remaining = length & 3;
+	length >>= 2;
 
-        while(length--) {
-                hash += extract(data);
-                temp = (extract(data+2) << 11) ^ hash;
-                hash = (hash << 16) ^ temp;
-                data += 2 * sizeof(uint16_t);
-                hash += hash >> 11;
-        }
-        
-        switch(remaining) {
-                case 3: 
-                        hash += extract(data);
-                        hash ^= hash << 16;
-                        hash ^= data[sizeof(uint16_t)] << 18;
-                        hash += hash >> 11;
-                        break;
-                
-                case 2: 
-                        hash += extract(data);
-                        hash ^= hash << 11;
-                        hash += hash >> 17;
-                        break;
+	while (length--) {
+		hash += extract(data);
+		temp = (extract(data+2) << 11) ^ hash;
+		hash = (hash << 16) ^ temp;
+		data += 2 * sizeof (uint16_t);
+		hash += hash >> 11;
+	}
 
-                case 1: 
-                        hash += *data;
-                        hash ^= hash << 10;
-                        hash += hash >> 1;
-                        break;
-        }
-        
-        hash ^= hash << 3;
-        hash += hash >> 5;
-        hash ^= hash << 4;
-        hash += hash >> 17;
-        hash ^= hash << 25;
-        hash += hash >> 6;
+	switch (remaining) {
+		case 3: 
+		 hash += extract(data);
+		 hash ^= hash << 16;
+		 hash ^= data[sizeof (uint16_t)] << 18;
+		 hash += hash >> 11;
+		 break;
 
-        return hash % entries;
+		case 2: 
+		 hash += extract(data);
+		 hash ^= hash << 11;
+		 hash += hash >> 17;
+		 break;
+
+		case 1: 
+		 hash += *data;
+		 hash ^= hash << 10;
+		 hash += hash >> 1;
+		 break;
+	}
+
+	hash ^= hash << 3;
+	hash += hash >> 5;
+	hash ^= hash << 4;
+	hash += hash >> 17;
+	hash ^= hash << 25;
+	hash += hash >> 6;
+
+	return hash % entries;
 }
 
 inline signed char flip(unsigned long int integer) {
@@ -93,27 +93,27 @@ inline struct Entry *lookup(const char *key) {
 	entry = table + hashValue;
 
 	// Test if bucket is empty
-	if(*(entry->key) == '\0') {
-		strncpy((char *) entry->key, key, sizeof(table->key));
+	if (*(entry->key) == '\0') {
+		strncpy((char *) entry->key, key, sizeof (table->key));
 		return entry;
 	}
 
 	// Check for collision
-	if(!strncmp(key, (char *) entry->key, sizeof(table->key)))
+	if (!strncmp(key, (char *) entry->key, sizeof (table->key)))
 		return entry;
 
 	// Quadratic probing
-	for(register unsigned int iterator = 0; iterator < 64; iterator++) {
+	for (register unsigned int iterator = 0; iterator < 64; iterator++) {
 		entry = table + ((hashValue + flip(iterator) * (iterator/2) * (iterator/2)) % entries);
 
 		// Test if bucket is empty
-		if(*(entry->key) == '\0') {
-			strncpy((char *) entry->key, key, sizeof(table->key));
+		if (*(entry->key) == '\0') {
+			strncpy((char *) entry->key, key, sizeof (table->key));
 			return entry;
 		}
 
 		// Check for collision
-		if(!strncmp(key, (char *) entry->key, sizeof(table->key)))
+		if (!strncmp(key, (char *) entry->key, sizeof (table->key)))
 			return entry;
 	}
 
@@ -123,7 +123,7 @@ inline struct Entry *lookup(const char *key) {
 bool commit(const char *key, unsigned long long int value) {
 	register struct Entry *entry = lookup(key);
 
-	if(entry == 0)
+	if (entry == 0)
 		return false;
 
 	entry->value = value;
@@ -133,7 +133,7 @@ bool commit(const char *key, unsigned long long int value) {
 bool increase(const char *key) {
 	register struct Entry *entry = lookup(key);
 
-	if(entry == 0)
+	if (entry == 0)
 		return false;
 
 	entry->value++;
