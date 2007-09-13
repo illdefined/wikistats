@@ -37,6 +37,8 @@
 #include "hash.h"
 #include "urldecode.h"
 
+#define tokenize(str, delim) str = ptr; while(*ptr != (delim)) { if(*ptr == '\0') goto leave; ptr++; } *ptr = '\0'; ptr++;
+
 
 const struct {
 	const unsigned char major;
@@ -175,63 +177,47 @@ int main(int argc, char *argv[]) {
 	}
 
 	static char readBuffer[4096];
-	register char *hostname, *sequence, *time, *reqtime, *ip, *squidStatus, *httpStatus, *size, *method, *url, *peer, *mime, *referer, *forwarded, *useragent;
+	char *hostname, *sequence, *time, *reqtime, *ip, *squidStatus, *httpStatus, *size, *method, *url, *peer, *mime, *referrer, *forwarded, *useragent;
 
 	while (fgets(readBuffer, sizeof readBuffer, stdin)) {
-		// Tokenize input line
-		if (!(hostname = strtok(readBuffer, " ")))
+		register char *ptr = readBuffer;
+
+		tokenize(hostname, ' ');
+		tokenize(sequence, ' ');
+		tokenize(time, ' ');
+		tokenize(reqtime, ' ');
+		tokenize(ip, ' ');
+		tokenize(squidStatus, '/');
+		tokenize(httpStatus, ' ');
+
+		if(httpStatus[0] != '2'
+		 || httpStatus[1] != '0'
+		 || httpStatus[2] != '0'
+		 || httpStatus[3] != '\0')
 			continue;
 
-		if (!(sequence = strtok(NULL, " ")))
+		tokenize(size, ' ');
+		tokenize(method, ' ');
+
+		if(method[0] != 'G'
+		 || method[1] != 'E'
+		 || method[2] != 'T'
+		 || method[3] != '\0')
 			continue;
 
-		if (!(time = strtok(NULL, " ")))
-			continue;
-
-		if (!(reqtime = strtok(NULL, " ")))
-			continue;
-
-		if (!(ip = strtok(NULL, " ")))
-			continue;
-
-		if (!(squidStatus = strtok(NULL, "/")))
-			continue;
-
-		if (!(httpStatus = strtok(NULL, " "))
-			|| strncmp(httpStatus, "200", 4))
-			continue;
-
-		if (!(size = strtok(NULL, " ")))
-			continue;
-
-		// Drop non-GET requests
-		if (!(method = strtok(NULL, " "))
-			|| strncmp(method, "GET", 4))
-			continue;
-
-		if (!(url = strtok(NULL, " ")))
-			continue;
-
-		if (!(peer = strtok(NULL, " ")))
-			continue;
-
-		if (!(mime = strtok(NULL, " ")))
-			continue;
-
-		if (!(referer = strtok(NULL, " ")))
-			continue;
-
-		if (!(forwarded = strtok(NULL, " ")))
-			continue;
-
-		if (!(useragent = strtok(NULL, " ")))
-			continue;
+		tokenize(url, ' ');
+		tokenize(peer, ' ');
+		tokenize(mime, ' ');
+		tokenize(referrer, ' ');
+		tokenize(forwarded, ' ');
+		useragent = ptr;
 
 		// URL-decode URL
 		debug(!urldecode((unsigned char *) url));
 
 		// Commit to database
 		catch(!increase(url));
+leave:;
 	}
 
 	return EXIT_SUCCESS;
