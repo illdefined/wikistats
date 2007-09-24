@@ -37,7 +37,19 @@
 #include "hash.h"
 #include "urldecode.h"
 
-#define tokenize(str, delim) str = ptr; while(*ptr != (delim)) { if(*ptr == '\0') goto leave; ptr++; } *ptr = '\0'; ptr++;
+#define PERMS (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
+
+#define tokenize(str, delim) \
+	str = ptr; \
+	loop_##str: \
+	if(*ptr != (delim)) { \
+		if(*ptr == '\0') \
+			continue; \
+		ptr++; \
+		goto loop_##str; \
+	} \
+	*ptr = '\0'; \
+	ptr++;
 
 
 const struct {
@@ -75,7 +87,8 @@ inline unsigned long int align(unsigned long int size, unsigned long int alignme
 }
 
 void synchronize() {
-	debug(msync(table, align(entries * sizeof (struct Entry), (unsigned long int) pageSize), MS_SYNC));
+	debug(msync(table, align(entries * sizeof (struct Entry),
+		(unsigned long int) pageSize), MS_SYNC));
 }
 
 int main(int argc, char *argv[]) {
@@ -155,13 +168,16 @@ int main(int argc, char *argv[]) {
 	warn(mlockall(MCL_CURRENT | MCL_FUTURE));
 
 	// Open database file
-	catch((dbHandle = open(dbFile, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1);
+	catch((dbHandle = open(dbFile, O_RDWR | O_CREAT, PERMS)) == -1);
 
 	// Truncate file to appropriate size (well, this fixes these mysterious bus errors...)
-	catch(ftruncate(dbHandle, align(entries * sizeof (struct Entry), (unsigned long int) pageSize)));
+	catch(ftruncate(dbHandle, align(entries * sizeof (struct Entry),
+		(unsigned long int) pageSize)));
 
 	// Establish mapping
-	catch((table = mmap(0, align(entries * sizeof (struct Entry), (unsigned long int) pageSize), PROT_READ | PROT_WRITE, MAP_SHARED, dbHandle, 0)) == MAP_FAILED);
+	catch((table = mmap(0, align(entries * sizeof (struct Entry),
+		(unsigned long) pageSize), PROT_READ | PROT_WRITE, MAP_SHARED,
+		dbHandle, 0)) == MAP_FAILED);
 
 	// Flush changes on exit
 	atexit(synchronize);
@@ -177,7 +193,9 @@ int main(int argc, char *argv[]) {
 	}
 
 	static char readBuffer[4096];
-	char *hostname, *sequence, *time, *reqtime, *ip, *squidStatus, *httpStatus, *size, *method, *url, *peer, *mime, *referrer, *forwarded, *useragent;
+	char *hostname, *sequence, *time, *reqtime, *ip, *squidStatus,
+	     *httpStatus, *size, *method, *url, *peer, *mime, *referrer,
+	     *forwarded, *useragent;
 
 	while (fgets(readBuffer, sizeof readBuffer, stdin)) {
 		register char *ptr = readBuffer;
@@ -217,7 +235,6 @@ int main(int argc, char *argv[]) {
 
 		// Commit to database
 		catch(!increase(url));
-leave:;
 	}
 
 	return EXIT_SUCCESS;
