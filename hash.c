@@ -26,12 +26,8 @@
 #include "hash.h"
 #include "log.h"
 
-struct Entry *table;
-unsigned long int entries = 32768;
-
-inline uint32_t extract(const uint8_t *data) {
-	return (((uint32_t) data[1]) << 8) + ((uint32_t) data[0]);
-}
+#define extract(data) ((((uint32_t) (data)[1]) << 8) + ((uint32_t) (data)[0]))
+#define flip(integer) (((integer) % 2) ? -1 : 1)
 
 inline uint32_t hash(const uint8_t *data, unsigned long int length) {
 	register uint32_t hash = length;
@@ -77,66 +73,62 @@ inline uint32_t hash(const uint8_t *data, unsigned long int length) {
 	hash ^= hash << 25;
 	hash += hash >> 6;
 
-	return hash % entries;
+	return hash;
 }
 
-inline signed char flip(unsigned long int integer) {
-	// Equivalent to (-1) to the power of integer
-	return (integer % 2) ? -1 : 1;
-}
-
-inline struct Entry *lookup(const char *key) {
+inline struct Entry *lookup(struct Table table, const char *key) {
 	register unsigned long hashValue;
 	register struct Entry *entry;
+	register size_t iter;
 
-	hashValue = hash((uint8_t *) key, strlen(key));
-	entry = table + hashValue;
+	hashValue = hash((uint8_t *) key, strlen(key)) % table.size;
+	entry = table.data + hashValue;
 
 	// Test if bucket is empty
 	if (*(entry->key) == '\0') {
-		strncpy((char *) entry->key, key, sizeof (table->key));
+		strncpy((char *) entry->key, key, sizeof (table.data->key));
 		return entry;
 	}
 
 	// Check for collision
-	if (!strncmp(key, (char *) entry->key, sizeof (table->key)))
+	if (!strncmp(key, (char *) entry->key, sizeof (table.data->key)))
 		return entry;
 
 	// Quadratic probing
-	for (register unsigned int iterator = 0; iterator < 64; iterator++) {
-		entry = table + ((hashValue + flip(iterator) * (iterator/2) * (iterator/2)) % entries);
+	for (iter = 0; iter < 64; iter++) {
+		entry = table.data + ((hashValue + flip(iter) * (iter/2) * (iter/2)) % table.size);
 
 		// Test if bucket is empty
 		if (*(entry->key) == '\0') {
-			strncpy((char *) entry->key, key, sizeof (table->key));
+			strncpy((char *) entry->key, key, sizeof (table.data->key));
 			return entry;
 		}
 
 		// Check for collision
-		if (!strncmp(key, (char *) entry->key, sizeof (table->key)))
+		if (!strncmp(key, (char *) entry->key, sizeof (table.data->key)))
 			return entry;
 	}
 
 	return 0;
 }
 
-bool commit(const char *key, unsigned long long int value) {
-	register struct Entry *entry = lookup(key);
+int commit(struct Table table, const char *key, unsigned long long int value) {
+	register struct Entry *entry = lookup(table, key);
 
 	if (entry == 0)
-		return false;
+		return -1;
 
 	entry->value = value;
-	return true;
+	return 0;
 }
 
-bool increase(const char *key) {
-	register struct Entry *entry = lookup(key);
+int increase(struct Table table, const char *key) {
+	register struct Entry *entry = lookup(table, key);
 
 	if (entry == 0)
-		return false;
+		return -1;
 
 	entry->value++;
-	return true;
+	return 0;
 }
 

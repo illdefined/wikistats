@@ -21,18 +21,20 @@
 #ifndef HASH_H
 #define HASH_H
 
-#include <stdbool.h>
+#define storsize(table) (table.size * sizeof (struct Entry))
 
 struct Entry {
-	unsigned char key[512 - sizeof(unsigned long long int)];
+	unsigned char key[512 - sizeof (unsigned long long int)];
 	unsigned long long int value;
 };
 
-extern struct Entry *table;
-extern unsigned long int entries;
+struct Table {
+	struct Entry *data;
+	unsigned long int size;
+};
 
-inline struct Entry *lookup(const char *key);
-bool commit(const char *key, unsigned long long int value);
-bool increase(const char *key);
+inline struct Entry *lookup(struct Table table, const char *key);
+int commit(struct Table table, const char *key, unsigned long long int value);
+int increase(struct Table table, const char *key);
 
 #endif

@@ -25,94 +25,62 @@
 
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <syslog.h>
 #include <unistd.h>
 
-#include "log.h"
 #include "hash.h"
-#include "urldecode.h"
+#include "log.h"
+#include "parse.h"
+#include "version.h"
 
 #define PERMS (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
 
-#define tokenize(str, delim) \
-	str = ptr; \
-	loop_##str: \
-	if(*ptr != (delim)) { \
-		if(*ptr == '\0') \
-			continue; \
-		ptr++; \
-		goto loop_##str; \
-	} \
-	*ptr = '\0'; \
-	ptr++;
+static long int pageSize;
 
-
-const struct {
-	const unsigned char major;
-	const unsigned char minor;
-	const unsigned char micro;
-} version = { 0, 2, 2 };
-
-long int pageSize;
-
-const char const *versionString = "cwikistats version %hhu.%hhu.%hhu\n"
- "\n"
- "Copyright © MMVII\n"
- "  Mikael Voss <ffefd6 at haemoglobin dot org>\n"
- "  Leon Weber <leon at leonweber dot de>\n"
- "\n"
- "Provided that these terms and disclaimer and all copyright notices\n"
- "are retained or reproduced in an accompanying document, permission\n"
- "is granted to deal in this work without restriction, including un-\n"
- "limited rights to use, publicly perform, distribute, sell, modify,\n"
- "merge, give away, or sublicence.\n"
- "\n"
- "This work is provided “AS IS” and WITHOUT WARRANTY of any kind, to\n"
- "the utmost extent permitted by applicable law, neither express nor\n"
- "implied; without malicious intent or gross negligence. In no event\n"
- "may a licensor, author or contributor be held liable for indirect,\n"
- "direct, other damage, loss, or other issues arising in any way out\n"
- "of dealing in the work, even if advised of the possibility of such\n"
- "damage or existence of a defect, except proven that it results out\n"
- "of said person's immediate fault when using the work as intended.\n";
-
-
-inline unsigned long int align(unsigned long int size, unsigned long int alignment) {
+inline static unsigned long int align(unsigned long int size, unsigned long int alignment) {
 	return (size + alignment - 1ul) & ~(alignment - 1ul);
 }
 
-void synchronize() {
-	debug(msync(table, align(entries * sizeof (struct Entry),
-		(unsigned long int) pageSize), MS_SYNC));
-}
-
 int main(int argc, char *argv[]) {
-	char *dbFile = "/var/db/wikistats/database";
-	register int dbHandle;
+	struct Table table = { (struct Entry *) 0, 32768 };
+	char *path = "/var/db/wikistats/database";
+	int handle;
 
-	bool dump = false;
+	size_t bufsize = 1024;
+	char *buffer;
+
+	int dump = 0;
 	unsigned long int minimum = 1;
 
-	for (register unsigned int iterator = 1; iterator < argc; iterator++) {
-		if (argv[iterator][0] == '-'
-		 && argv[iterator][1] != '\0'
-		 && argv[iterator][2] == '\0') {
-			switch (argv[iterator][1]) {
+	register size_t iter;
+
+	for (iter = 1; iter < argc; iter++) {
+		if (argv[iter][0] == '-'
+		 && argv[iter][1] != '\0'
+		 && argv[iter][2] == '\0') {
+			switch (argv[iter][1]) {
+				case 'b':
+				 if (++iter >= argc) {
+				 	fputs("You must specify a number!\n", stderr);
+				 	return EXIT_FAILURE;
+				 }
+				 bufsize = strtoul(argv[iter], (char **) 0, 0);
+				 break;
+
 				case 'd':
-				 if (++iterator >= argc) {
+				 if (++iter >= argc) {
 				 	fputs("You must specify a path!\n", stderr);
 				 	return EXIT_FAILURE;
 				 }
-				 dbFile = argv[iterator];
+				 path = argv[iter];
 				 break;
 
 				case 'h':
 				 printf("usage: %s [options]\n"
+				  "  -b num    Input buffer size\n"
 				  "  -d path   Use path as database\n"
 				  "  -h        Issue this help\n"
 				  "  -l        Dump database\n"
@@ -123,68 +91,73 @@ int main(int argc, char *argv[]) {
 				 return EXIT_SUCCESS;
 
 				case 'l':
-				 dump = true;
+				 dump = 1;
 				 break;
 
 				case 'm':
-				 if (++iterator >= argc) {
+				 if (++iter >= argc) {
 				 	fputs("You must specify a number!\n", stderr);
 				 	return EXIT_FAILURE;
 				 }
-				 minimum = strtoul(argv[iterator], (char **) 0, 0);
+				 minimum = strtoul(argv[iter], (char **) 0, 0);
 				 break;
 
 				case 'n':
-				 if (++iterator >= argc) {
+				 if (++iter >= argc) {
 				 	fputs("You must specify a number!\n", stderr);
 				 	return EXIT_FAILURE;
 				 }
 				 // No checking needed - if entries is invalid, it will fail anyway!
-				 entries = strtoul(argv[iterator], (char **) 0, 0);
+				 table.size = strtoul(argv[iter], (char **) 0, 0);
 				 break;
 				
 				case 'v':
-				 printf(versionString, version.major, version.minor, version.micro);
+				 printf(VERSION_STRING, VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO);
 				 return EXIT_SUCCESS;
 
 				default:
-				 fprintf(stderr, "Invalid command line option -%c!\n", argv[iterator][1]);
+				 fprintf(stderr, "Invalid command line option -%c!\n", argv[iter][1]);
 				 return EXIT_FAILURE;
 			}
 		}
 		else {
-			fprintf(stderr, "Unknown command line argument %s!\n", argv[iterator]);
+			fprintf(stderr, "Unknown command line argument %s!\n", argv[iter]);
 			return EXIT_FAILURE;
 		}
 	}
 
-	// Alignsize of hash table mapping to page size
-	catch((pageSize = sysconf(_SC_PAGESIZE)) == -1l);
+	pageSize = sysconf(_SC_PAGESIZE);
+	catch(pageSize < 0);
 
 	// Open system log
 	openlog("cwikistats", LOG_PERROR, LOG_DAEMON);
 
 	// Attempt to lock all memory to avoid paging of perfomance critical stuff
-	warn(mlockall(MCL_CURRENT | MCL_FUTURE));
+	warn(
+		mlockall(MCL_CURRENT | MCL_FUTURE)
+	);
 
 	// Open database file
-	catch((dbHandle = open(dbFile, O_RDWR | O_CREAT, PERMS)) == -1);
+	handle = open(path, O_RDWR | O_CREAT, PERMS);
+	catch(handle < 0);
 
-	// Truncate file to appropriate size (well, this fixes these mysterious bus errors...)
-	catch(ftruncate(dbHandle, align(entries * sizeof (struct Entry),
-		(unsigned long int) pageSize)));
+	// Truncate file to appropriate size
+	catch(
+		ftruncate(handle, align(storsize(table), (unsigned long int) pageSize))
+	);
 
 	// Establish mapping
-	catch((table = mmap(0, align(entries * sizeof (struct Entry),
-		(unsigned long) pageSize), PROT_READ | PROT_WRITE, MAP_SHARED,
-		dbHandle, 0)) == MAP_FAILED);
+	table.data = mmap(0, align(storsize(table), (unsigned long) pageSize),
+		PROT_READ | PROT_WRITE, MAP_SHARED, handle, 0);
+	catch(table.data == MAP_FAILED);
 
-	// Flush changes on exit
-	atexit(synchronize);
+	warn(
+		close(handle)
+	);
 
 	if (dump) {
-		register struct Entry *current = table;
-		while (current < table + entries) {
+		register struct Entry *current = table.data;
+		while (current < table.data + table.size) {
 			if (current->value > minimum)
 				printf("%020llu %s\n", current->value, current->key);
 			current++;
@@ -192,50 +165,11 @@ int main(int argc, char *argv[]) {
 		return EXIT_SUCCESS;
 	}
 
-	static char readBuffer[4096];
-	char *hostname, *sequence, *time, *reqtime, *ip, *squidStatus,
-	     *httpStatus, *size, *method, *url, *peer, *mime, *referrer,
-	     *forwarded, *useragent;
+	catch(
+		buffer = malloc(bufsize)
+	);
 
-	while (fgets(readBuffer, sizeof readBuffer, stdin)) {
-		register char *ptr = readBuffer;
-
-		tokenize(hostname, ' ');
-		tokenize(sequence, ' ');
-		tokenize(time, ' ');
-		tokenize(reqtime, ' ');
-		tokenize(ip, ' ');
-		tokenize(squidStatus, '/');
-		tokenize(httpStatus, ' ');
-
-		if(httpStatus[0] != '2'
-		 || httpStatus[1] != '0'
-		 || httpStatus[2] != '0'
-		 || httpStatus[3] != '\0')
-			continue;
-
-		tokenize(size, ' ');
-		tokenize(method, ' ');
-
-		if(method[0] != 'G'
-		 || method[1] != 'E'
-		 || method[2] != 'T'
-		 || method[3] != '\0')
-			continue;
-
-		tokenize(url, ' ');
-		tokenize(peer, ' ');
-		tokenize(mime, ' ');
-		tokenize(referrer, ' ');
-		tokenize(forwarded, ' ');
-		useragent = ptr;
-
-		// URL-decode URL
-		debug(!urldecode((unsigned char *) url));
-
-		// Commit to database
-		catch(!increase(url));
-	}
+	parse(table, buffer, bufsize);
 
 	return EXIT_SUCCESS;
 }
