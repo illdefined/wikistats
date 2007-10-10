@@ -7,7 +7,7 @@ all: cwikistats
 
 .c.o:
 	@echo " CC $<"
-	@${CC} -c -Wall,extra,error ${CFLAGS} $<
+	@${CC} -c -Wall -Wextra -Werror ${CFLAGS} $<
 
 ${OBJ}:
 

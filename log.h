@@ -33,7 +33,7 @@
 #ifdef DEBUG
 # define debug(expression) if((expression)) log(LOG_DEBUG, #expression)
 #else
-# define debug(expression) if((expression))
+# define debug(expression) if((expression)) {}
 #endif
 
 #endif

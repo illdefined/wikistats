@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 	int dump = 0;
 	unsigned long int minimum = 1;
 
-	register size_t iter;
+	register int iter;
 
 	for (iter = 1; iter < argc; iter++) {
 		if (argv[iter][0] == '-'
