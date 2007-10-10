@@ -139,7 +139,7 @@ int inject(struct Table src, struct Table dest) {
 
 	while (iter < src.data + src.size) {
 		if (iter->value)
-			if (commit(dest, iter->key, iter->value))
+			if (commit(dest, (char *) iter->key, iter->value))
 				return -1;
 		iter++;
 	}
