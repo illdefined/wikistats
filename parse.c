@@ -85,6 +85,10 @@ void parse(struct Table table, struct Table cache, char *buffer, size_t bufsize)
 			catch(
 				inject(cache, table)
 			);
+
+			memset(cache.data, 0, storsize(cache));
 		}
 	}
+
+	inject(cache, table);
 }

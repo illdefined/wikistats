@@ -182,6 +182,8 @@ int main(int argc, char *argv[]) {
 	cache.data = malloc(storsize(cache));
 	catch(!cache.data);
 
+	memset(cache.data, 0, storsize(cache));
+
 	parse(table, cache, buffer, bufsize);
 
 	return EXIT_SUCCESS;
