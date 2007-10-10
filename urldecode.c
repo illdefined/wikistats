@@ -59,7 +59,7 @@ const unsigned char hexChar[256] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
-bool urldecode(unsigned char *low) {
+int urldecode(unsigned char *low) {
 	register unsigned char *high = low;
 	register unsigned char character;
 	while (*high) {
@@ -67,7 +67,7 @@ bool urldecode(unsigned char *low) {
 			// Check for premature string end
 			if (!*++high || !*(high+1)) {
 				errno = EINVAL;
-				return false;
+				return -1;
 			}
 
 			character = hexChar[*high] * 0x10;
@@ -76,7 +76,7 @@ bool urldecode(unsigned char *low) {
 			// Reject illegal characters
 			if (character <= 0x1F) {
 				errno = EINVAL;
-				return false;
+				return -1;
 			}
 
 			*low = character;
@@ -88,5 +88,5 @@ bool urldecode(unsigned char *low) {
 	}
 
 	*low = '\0';
-	return true;
+	return 0;
 }

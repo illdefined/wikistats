@@ -37,7 +37,7 @@
 	*ptr = '\0'; \
 	ptr++;
 
-void parse(struct Table table, char *buffer, size_t bufsize) {
+void parse(struct Table table, struct Table cache, char *buffer, size_t bufsize) {
 	char *hostname, *sequence, *time, *reqtime, *ip, *squidStatus,
 	     *httpStatus, *size, *method, *url, *peer, *mime, *referrer,
 	     *forwarded, *useragent;
@@ -80,9 +80,11 @@ void parse(struct Table table, char *buffer, size_t bufsize) {
 			urldecode((unsigned char *) url)
 		);
 
-		// Commit to database
-		catch(
-			increase(table, url)
-		);
+		// Commit to cache and flush it if necessary
+		if (increase(cache, url)) {
+			catch(
+				inject(cache, table)
+			);
+		}
 	}
 }

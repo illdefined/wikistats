@@ -33,8 +33,9 @@ struct Table {
 	unsigned long int size;
 };
 
-inline struct Entry *lookup(struct Table table, const char *key);
-int commit(struct Table table, const char *key, unsigned long long int value);
-int increase(struct Table table, const char *key);
+inline struct Entry *lookup(struct Table, const char *);
+int commit(struct Table, const char *, unsigned long long int);
+int increase(struct Table, const char *);
+int inject(struct Table, struct Table);
 
 #endif

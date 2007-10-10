@@ -45,7 +45,8 @@ inline static unsigned long int align(unsigned long int size, unsigned long int 
 }
 
 int main(int argc, char *argv[]) {
-	struct Table table = { (struct Entry *) 0, 32768 };
+	struct Table table = { (struct Entry *) 0, 2097152 };
+	struct Table cache = { (struct Entry *) 0, 131072 };
 	char *path = "/var/db/wikistats/database";
 	int handle;
 
@@ -70,6 +71,15 @@ int main(int argc, char *argv[]) {
 				 bufsize = strtoul(argv[iter], (char **) 0, 0);
 				 break;
 
+				case 'c':
+				 if (++iter >= argc) {
+				 	fputs("You must specify a number!\n", stderr);
+				 	return EXIT_FAILURE;
+				 }
+				 // No checking needed - if entries is invalid, it will fail anyway!
+				 cache.size = strtoul(argv[iter], (char **) 0, 0);
+				 break;
+
 				case 'd':
 				 if (++iter >= argc) {
 				 	fputs("You must specify a path!\n", stderr);
@@ -81,11 +91,12 @@ int main(int argc, char *argv[]) {
 				case 'h':
 				 printf("usage: %s [options]\n"
 				  "  -b num    Input buffer size\n"
+				  "  -c num    Cache buckets\n"
 				  "  -d path   Use path as database\n"
 				  "  -h        Issue this help\n"
 				  "  -l        Dump database\n"
 				  "  -m num    Minimum\n"
-				  "  -n num    Create num buckets\n"
+				  "  -n num    Database buckets\n"
 				  "  -v        Show version\n",
 				  argv[0]);
 				 return EXIT_SUCCESS;
@@ -110,7 +121,7 @@ int main(int argc, char *argv[]) {
 				 // No checking needed - if entries is invalid, it will fail anyway!
 				 table.size = strtoul(argv[iter], (char **) 0, 0);
 				 break;
-				
+
 				case 'v':
 				 printf(VERSION_STRING, VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO);
 				 return EXIT_SUCCESS;
@@ -168,7 +179,10 @@ int main(int argc, char *argv[]) {
 	buffer = malloc(bufsize);
 	catch(!buffer);
 
-	parse(table, buffer, bufsize);
+	cache.data = malloc(storsize(cache));
+	catch(!cache.data);
+
+	parse(table, cache, buffer, bufsize);
 
 	return EXIT_SUCCESS;
 }

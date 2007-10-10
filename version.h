@@ -3,9 +3,9 @@
 
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 2
-#define VERSION_MICRO 3
+#define VERSION_MICRO 4
 
-#define VERSION_STRING "cwikistats version %hhx.%hhx.%hhx\n" \
+#define VERSION_STRING "cwikistats version %hhu.%hhu.%hhu\n" \
  "\n" \
  "Copyright © MMVII\n" \
  "  Mikael Voss <ffefd6 at haemoglobin dot org>\n" \

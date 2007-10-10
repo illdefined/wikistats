@@ -109,7 +109,9 @@ inline struct Entry *lookup(struct Table table, const char *key) {
 			return entry;
 	}
 
-	return 0;
+	errno = ENOMEM;
+
+	return (struct Entry *) 0;
 }
 
 int commit(struct Table table, const char *key, unsigned long long int value) {
@@ -132,3 +134,15 @@ int increase(struct Table table, const char *key) {
 	return 0;
 }
 
+int inject(struct Table src, struct Table dest) {
+	register struct Entry *iter = src.data;
+
+	while (iter < src.data + src.size) {
+		if (iter->value)
+			if (commit(dest, iter->key, iter->value))
+				return -1;
+		iter++;
+	}
+
+	return 0;
+}
