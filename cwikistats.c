@@ -165,9 +165,8 @@ int main(int argc, char *argv[]) {
 		return EXIT_SUCCESS;
 	}
 
-	catch(
-		buffer = malloc(bufsize)
-	);
+	buffer = malloc(bufsize);
+	catch(!buffer);
 
 	parse(table, buffer, bufsize);
 
