@@ -31,7 +31,6 @@
 #include <syslog.h>
 #include <unistd.h>
 
-#include "hash.h"
 #include "log.h"
 #include "parse.h"
 #include "version.h"
@@ -52,9 +51,6 @@ int main(int argc, char *argv[]) {
 
 	size_t bufsize = 1024;
 	char *buffer;
-
-	int dump = 0;
-	unsigned long int minimum = 1;
 
 	register int iter;
 
@@ -94,24 +90,10 @@ int main(int argc, char *argv[]) {
 				  "  -c num    Cache buckets\n"
 				  "  -d path   Use path as database\n"
 				  "  -h        Issue this help\n"
-				  "  -l        Dump database\n"
-				  "  -m num    Minimum\n"
 				  "  -n num    Database buckets\n"
 				  "  -v        Show version\n",
 				  argv[0]);
 				 return EXIT_SUCCESS;
-
-				case 'l':
-				 dump = 1;
-				 break;
-
-				case 'm':
-				 if (++iter >= argc) {
-				 	fputs("You must specify a number!\n", stderr);
-				 	return EXIT_FAILURE;
-				 }
-				 minimum = strtoul(argv[iter], (char **) 0, 0);
-				 break;
 
 				case 'n':
 				 if (++iter >= argc) {
@@ -165,16 +147,6 @@ int main(int argc, char *argv[]) {
 	warn(
 		close(handle)
 	);
-
-	if (dump) {
-		register struct Entry *current = table.data;
-		while (current < table.data + table.size) {
-			if (current->value > minimum)
-				printf("%020llu %s\n", current->value, current->key);
-			current++;
-		}
-		return EXIT_SUCCESS;
-	}
 
 	buffer = malloc(bufsize);
 	catch(!buffer);

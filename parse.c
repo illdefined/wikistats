@@ -22,7 +22,7 @@
 #include <stdio.h>
 
 #include "log.h"
-#include "hash.h"
+#include "table.h"
 #include "urldecode.h"
 
 #define tokenize(str, delim) \
