@@ -50,17 +50,7 @@ int commit(struct Table table, const char *key, unsigned long long int value) {
 	if (entry == 0)
 		return -1;
 
-	entry->value = value;
-	return 0;
-}
-
-int increase(struct Table table, const char *key) {
-	register struct Entry *entry = lookup(table, key);
-
-	if (entry == 0)
-		return -1;
-
-	entry->value++;
+	entry->value += value;
 	return 0;
 }
 

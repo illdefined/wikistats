@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
 			switch (argv[iter][1]) {
 				case 'd':
 				 if (++iter >= argc) {
-				 	fputs("You must specify a path!\n", stderr);
+				 	fputs(REQ_PATH, stderr);
 				 	return EXIT_FAILURE;
 				 }
 				 path = argv[iter];
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
 
 				case 'm':
 				 if (++iter >= argc) {
-				 	fputs("You must specify a number!\n", stderr);
+				 	fputs(REQ_NUM, stderr);
 				 	return EXIT_FAILURE;
 				 }
 				 minimum = strtoull(argv[iter], (char **) 0, 10);
@@ -66,12 +66,12 @@ int main(int argc, char *argv[]) {
 				 return EXIT_SUCCESS;
 
 				default:
-				 fprintf(stderr, "Invalid command line option -%c!\n", argv[iter][1]);
+				 fprintf(stderr, INV_OPT, argv[iter][1]);
 				 return EXIT_FAILURE;
 			}
 		}
 		else {
-			fprintf(stderr, "Unknown command line argument %s!\n", argv[iter]);
+			fprintf(stderr, INV_ARG, argv[iter]);
 			return EXIT_FAILURE;
 		}
 	}

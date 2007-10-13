@@ -12,6 +12,12 @@
 #define OPT_N "  -n num    Database buckets\n"
 #define OPT_V "  -v        Show version\n"
 
+#define REQ_NUM  "You must specify a number!\n"
+#define REQ_PATH "You must specify a path!\n"
+
+#define INV_OPT "Invalid command line option -%c!\n"
+#define INV_ARG "Unknown command line argument %s!\n"
+
 #define align(size, alignment) (((unsigned long int) (size) + (unsigned long int) (alignment) - 1ul) & ~((unsigned long int) (alignment) - 1ul))
 
 #endif
