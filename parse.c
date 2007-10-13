@@ -20,8 +20,8 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
-#include "log.h"
 #include "table.h"
 #include "urldecode.h"
 
@@ -37,7 +37,7 @@
 	*ptr = '\0'; \
 	ptr++;
 
-void parse(struct Table table, struct Table cache, char *buffer, size_t bufsize) {
+int parse(struct Table table, struct Table cache, char *buffer, size_t bufsize) {
 	char *hostname, *sequence, *time, *reqtime, *ip, *squidStatus,
 	     *httpStatus, *size, *method, *url, *peer, *mime, *referrer,
 	     *forwarded, *useragent;
@@ -75,20 +75,16 @@ void parse(struct Table table, struct Table cache, char *buffer, size_t bufsize)
 		tokenize(forwarded, ' ');
 		useragent = ptr;
 
-		// URL-decode URL
-		debug(
-			urldecode((unsigned char *) url)
-		);
+		urldecode((unsigned char *) url);
 
 		// Commit to cache and flush it if necessary
 		if (increase(cache, url)) {
-			catch(
-				inject(cache, table)
-			);
+			if(inject(cache, table))
+				return -1;
 
 			memset(cache.data, 0, storsize(cache));
 		}
 	}
 
-	inject(cache, table);
+	return inject(cache, table);
 }

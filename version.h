@@ -2,8 +2,8 @@
 #define VERSION_H
 
 #define VERSION_MAJOR 0
-#define VERSION_MINOR 2
-#define VERSION_MICRO 4
+#define VERSION_MINOR 3
+#define VERSION_MICRO 0
 
 #define VERSION_STRING "cwikistats version %hhu.%hhu.%hhu\n" \
  "\n" \

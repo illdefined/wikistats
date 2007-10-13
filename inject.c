@@ -18,6 +18,8 @@
  * of said person's immediate fault when using the work as intended.
  */
 
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,9 +32,14 @@
 
 int main(int argc, char *argv[]) {
 	struct Entry entry;
-	char *path = DEF_DB;
+	struct Table table;
+
+	const char *path = DEF_DB;
 	int handle;
+	struct stat statbuf;
 	unsigned long long int minimum = 1ull;
+
+	long int pageSize;
 
 	register int iter;
 
@@ -76,16 +83,41 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	// Open database file
-	handle = open(path, O_RDONLY);
+	pageSize = sysconf(_SC_PAGESIZE);
+	if (pageSize < 0) {
+		perror("sysconf");
+		return EXIT_FAILURE;
+	}
+
+	handle = open(path, O_RDWR);
 	if (handle < 0) {
 		perror("open");
 		return EXIT_FAILURE;
 	}
 
-	while (read(handle, &entry, sizeof (entry)) == sizeof (entry)) {
-		if(entry.value >= minimum)
-			printf("%020llu %s\n", entry.value, entry.key);
+	if(fstat(handle, &statbuf)) {
+		perror("fstat");
+		return EXIT_FAILURE;
+	}
+
+	table.size = statbuf.st_size / sizeof (struct Entry);
+	table.data = mmap(0, align(storsize(table), (unsigned long) pageSize),
+		PROT_READ | PROT_WRITE, MAP_SHARED, handle, 0);
+	if (table.data == MAP_FAILED) {
+		perror("mmap");
+		return EXIT_FAILURE;
+	}
+
+	if (close(handle))
+		perror("close");
+
+	while (read(0, &entry, sizeof (entry)) == sizeof (entry)) {
+		if(entry.value >= minimum) {
+			if(commit(table, entry.key, entry.value)) {
+				perror("commit");
+				return EXIT_FAILURE;
+			}
+		}
 	}
 
 	return EXIT_SUCCESS;

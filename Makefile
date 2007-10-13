@@ -1,23 +1,22 @@
-SRC = cwikistats.c hash.c parse.c urldecode.c
-OBJ = ${SRC:.c=.o}
+CFLAGS ?= -Os -fomit-frame-pointer
 
-CFLAGS ?= -Os
+CFLAGS += -Wall -Wextra -Werror
 
-all: cwikistats
+all: devour inject vomit
 
-.c.o:
-	@echo " CC $<"
-	@${CC} -c -Wall -Wextra -Werror ${CFLAGS} $<
+devour: devour.c hash.c parse.c table.c urldecode.c
+	${CC} ${CFLAGS} -o $@ $?
+	strip $@
 
-${OBJ}:
+inject: inject.c hash.c table.c
+	${CC} ${CFLAGS} -o $@ $?
+	strip $@
 
-cwikistats: ${OBJ}
-	@echo " CC -o $@"
-	@${CC} -o $@ ${OBJ} ${LDFLAGS}
-	@strip $@
+vomit: vomit.c hash.c table.c
+	${CC} ${CFLAGS} -o $@ $?
+	strip $@
 
 clean:
-	@echo cleaning
-	@rm -f cwikistats ${OBJ}
+	rm -f devour inject vomit
 
 .PHONY: all clean

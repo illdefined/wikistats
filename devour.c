@@ -19,38 +19,30 @@
  * of said person's immediate fault when using the work as intended.
  */
 
-// Get rid of these annoying warning when using the bloated GNU libc
-#define _XOPEN_SOURCE
-#define _XOPEN_SOURCE_EXTENDED
-
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <syslog.h>
+#include <string.h>
 #include <unistd.h>
 
-#include "log.h"
+#include "common.h"
 #include "parse.h"
 #include "version.h"
 
 #define PERMS (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
 
-static long int pageSize;
-
-inline static unsigned long int align(unsigned long int size, unsigned long int alignment) {
-	return (size + alignment - 1ul) & ~(alignment - 1ul);
-}
-
 int main(int argc, char *argv[]) {
 	struct Table table = { (struct Entry *) 0, 2097152 };
 	struct Table cache = { (struct Entry *) 0, 131072 };
-	char *path = "/var/db/wikistats/database";
+	char *path = DEF_DB;
 	int handle;
 
 	size_t bufsize = 1024;
 	char *buffer;
+
+	long int pageSize;
 
 	register int iter;
 
@@ -85,14 +77,7 @@ int main(int argc, char *argv[]) {
 				 break;
 
 				case 'h':
-				 printf("usage: %s [options]\n"
-				  "  -b num    Input buffer size\n"
-				  "  -c num    Cache buckets\n"
-				  "  -d path   Use path as database\n"
-				  "  -h        Issue this help\n"
-				  "  -n num    Database buckets\n"
-				  "  -v        Show version\n",
-				  argv[0]);
+				 printf(USAGE OPT_B OPT_C OPT_D OPT_H OPT_N OPT_V, argv[0]);
 				 return EXIT_SUCCESS;
 
 				case 'n':
@@ -120,43 +105,57 @@ int main(int argc, char *argv[]) {
 	}
 
 	pageSize = sysconf(_SC_PAGESIZE);
-	catch(pageSize < 0);
-
-	// Open system log
-	openlog("cwikistats", LOG_PERROR, LOG_DAEMON);
+	if (pageSize < 0) {
+		perror("sysconf");
+		return EXIT_FAILURE;
+	}
 
 	// Attempt to lock all memory to avoid paging of perfomance critical stuff
-	warn(
-		mlockall(MCL_CURRENT | MCL_FUTURE)
-	);
+	if (mlockall(MCL_CURRENT | MCL_FUTURE))
+		perror("mlockall");
 
 	// Open database file
 	handle = open(path, O_RDWR | O_CREAT, PERMS);
-	catch(handle < 0);
+	if (handle < 0) {
+		perror("open");
+		return EXIT_FAILURE;
+	}
 
 	// Truncate file to appropriate size
-	catch(
-		ftruncate(handle, align(storsize(table), (unsigned long int) pageSize))
-	);
+	if (ftruncate(handle, align(storsize(table), (unsigned long int) pageSize))) {
+		perror("ftruncate");
+		return EXIT_FAILURE;
+	}
 
 	// Establish mapping
 	table.data = mmap(0, align(storsize(table), (unsigned long) pageSize),
 		PROT_READ | PROT_WRITE, MAP_SHARED, handle, 0);
-	catch(table.data == MAP_FAILED);
+	if (table.data == MAP_FAILED) {
+		perror("mmap");
+		return EXIT_FAILURE;
+	}
 
-	warn(
-		close(handle)
-	);
+	if (close(handle))
+		perror("close");
 
 	buffer = malloc(bufsize);
-	catch(!buffer);
+	if (!buffer) {
+		perror("malloc");
+		return EXIT_FAILURE;
+	}
 
 	cache.data = malloc(storsize(cache));
-	catch(!cache.data);
+	if (!cache.data) {
+		perror("malloc");
+		return EXIT_FAILURE;
+	}
 
 	memset(cache.data, 0, storsize(cache));
 
-	parse(table, cache, buffer, bufsize);
+	if(parse(table, cache, buffer, bufsize)) {
+		perror("parse");
+		return EXIT_FAILURE;
+	}
 
 	return EXIT_SUCCESS;
 }
