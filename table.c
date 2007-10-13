@@ -16,12 +16,12 @@ inline struct Entry *lookup(struct Table table, const char *key) {
 
 	// Test if bucket is empty
 	if (*(entry->key) == '\0') {
-		strncpy((char *) entry->key, key, sizeof (table.data->key));
+		strncpy(entry->key, key, sizeof (table.data->key));
 		return entry;
 	}
 
 	// Check for collision
-	if (!strncmp(key, (char *) entry->key, sizeof (table.data->key)))
+	if (!strncmp(key, entry->key, sizeof (table.data->key)))
 		return entry;
 
 	// Quadratic probing
@@ -30,12 +30,12 @@ inline struct Entry *lookup(struct Table table, const char *key) {
 
 		// Test if bucket is empty
 		if (*(entry->key) == '\0') {
-			strncpy((char *) entry->key, key, sizeof (table.data->key));
+			strncpy(entry->key, key, sizeof (table.data->key));
 			return entry;
 		}
 
 		// Check for collision
-		if (!strncmp(key, (char *) entry->key, sizeof (table.data->key)))
+		if (!strncmp(key, entry->key, sizeof (table.data->key)))
 			return entry;
 	}
 

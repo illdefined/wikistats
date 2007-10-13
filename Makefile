@@ -1,19 +1,22 @@
 CFLAGS ?= -Os -fomit-frame-pointer
-
 CFLAGS += -Wall -Wextra -Werror
+
+DEVOUR = devour.c hash.c parse.c table.c urldecode.c
+INJECT = inject.c hash.c table.c
+VOMIT  = vomit.c hash.c table.c
 
 all: devour inject vomit
 
-devour: devour.c hash.c parse.c table.c urldecode.c
-	${CC} ${CFLAGS} -o $@ $?
+devour: ${DEVOUR}
+	${CC} ${CFLAGS} -o $@ ${DEVOUR}
 	strip $@
 
-inject: inject.c hash.c table.c
-	${CC} ${CFLAGS} -o $@ $?
+inject: ${INJECT}
+	${CC} ${CFLAGS} -o $@ ${INJECT}
 	strip $@
 
-vomit: vomit.c hash.c table.c
-	${CC} ${CFLAGS} -o $@ $?
+vomit: ${VOMIT}
+	${CC} ${CFLAGS} -o $@ ${VOMIT}
 	strip $@
 
 clean:

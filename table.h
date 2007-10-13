@@ -4,7 +4,7 @@
 #define storsize(table) (table.size * sizeof (struct Entry))
 
 struct Entry {
-	unsigned char key[512 - sizeof (unsigned long long int)];
+	char key[512 - sizeof (unsigned long long int)];
 	unsigned long long int value;
 };
 
