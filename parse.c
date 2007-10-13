@@ -78,7 +78,7 @@ int parse(struct Table table, struct Table cache, char *buffer, size_t bufsize) 
 		urldecode((unsigned char *) url);
 
 		// Commit to cache and flush it if necessary
-		if (commit(cache, url, 1ull)) {
+		if (increment(cache, url)) {
 			if(inject(cache, table))
 				return -1;
 

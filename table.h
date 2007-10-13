@@ -15,6 +15,7 @@ struct Table {
 
 inline struct Entry *lookup(struct Table, const char *);
 int commit(struct Table, const char *, unsigned long long int);
+int increment(struct Table, const char *);
 int inject(struct Table, struct Table);
 
 #endif
