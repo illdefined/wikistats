@@ -21,6 +21,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,6 +39,7 @@ int main(int argc, char *argv[]) {
 	int handle;
 	struct stat statbuf;
 	unsigned long long int minimum = 1ull;
+	const char *expression = (char *) 0;
 
 	long int pageSize;
 
@@ -56,8 +58,16 @@ int main(int argc, char *argv[]) {
 				 path = argv[iter];
 				 break;
 
+				case 'e':
+				 if (++iter >= argc) {
+				 	fputs(REQ_EXP, stderr);
+				 	return EXIT_FAILURE;
+				 }
+				 expression = argv[iter];
+				 break;
+
 				case 'h':
-				 printf(USAGE OPT_D OPT_H OPT_M OPT_V, argv[0]);
+				 printf(USAGE OPT_D OPT_E OPT_H OPT_M OPT_V, argv[0]);
 				 return EXIT_SUCCESS;
 
 				case 'm':
@@ -70,7 +80,7 @@ int main(int argc, char *argv[]) {
 
 				case 'v':
 				 printf(VERSION_STRING, VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO);
-				 return EXIT_SUCCESS;
+					 return EXIT_SUCCESS;
 
 				default:
 				 fprintf(stderr, INV_OPT, argv[iter][1]);
@@ -95,7 +105,7 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	if(fstat(handle, &statbuf)) {
+	if (fstat(handle, &statbuf)) {
 		perror("fstat");
 		return EXIT_FAILURE;
 	}
@@ -111,11 +121,33 @@ int main(int argc, char *argv[]) {
 	if (close(handle))
 		perror("close");
 
-	while (read(0, &entry, sizeof (entry)) == sizeof (entry)) {
-		if(entry.value >= minimum) {
-			if(commit(table, entry.key, entry.value)) {
-				perror("commit");
+	if (expression) {
+		regex_t preg;
+		int ret;
+		char errbuf[64];
+
+			if ((ret = regcomp(&preg, expression, REG_NOSUB))) {
+				regerror(ret, &preg, errbuf, sizeof errbuf);
+				fputs(errbuf, stderr);
 				return EXIT_FAILURE;
+			}
+
+			while (read(0, &entry, sizeof (entry)) == sizeof (entry)) {
+				if (entry.value >= minimum && !regexec(&preg, entry.key, 0, (regmatch_t *) 0, 0)) {
+				if (commit(table, entry.key, entry.value)) {
+					perror("commit");
+					return EXIT_FAILURE;
+				}
+			}
+		}
+	}
+	else {
+		while (read(0, &entry, sizeof (entry)) == sizeof (entry)) {
+			if (entry.value >= minimum) {
+				if (commit(table, entry.key, entry.value)) {
+					perror("commit");
+					return EXIT_FAILURE;
+				}
 			}
 		}
 	}
