@@ -22,6 +22,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,9 +34,22 @@
 
 #define PERMS (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
 
+static struct Table table = { (struct Entry *) 0, 2097152 };
+static struct Table cache = { (struct Entry *) 0, 131072 };
+
+void signal_handler(int sig) {
+	switch (sig) {
+		case SIGTERM:
+		 inject(cache, table);
+		 exit(EXIT_FAILURE);
+
+		case SIGUSR1:
+		 inject(cache, table);
+		 break;
+	}
+}
+
 int main(int argc, char *argv[]) {
-	struct Table table = { (struct Entry *) 0, 2097152 };
-	struct Table cache = { (struct Entry *) 0, 131072 };
 	char *path = DEF_DB;
 	int handle;
 
@@ -149,6 +163,9 @@ int main(int argc, char *argv[]) {
 	}
 
 	memset(cache.data, 0, storsize(cache));
+
+	signal(SIGTERM, signal_handler);
+	signal(SIGUSR1, signal_handler);
 
 	if(parse(table, cache, buffer, bufsize)) {
 		perror("parse");

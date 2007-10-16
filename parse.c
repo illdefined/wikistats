@@ -19,6 +19,7 @@
  * of said person's immediate fault when using the work as intended.
  */
 
+#include <signal.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -41,6 +42,12 @@ int parse(struct Table table, struct Table cache, char *buffer, size_t bufsize) 
 	char *hostname, *sequence, *time, *reqtime, *ip, *squidStatus,
 	     *httpStatus, *size, *method, *url, *peer, *mime, *referrer,
 	     *forwarded, *useragent;
+
+	sigset_t sigset;
+
+	sigemptyset(&sigset);
+	sigaddset(&sigset, SIGTERM);
+	sigaddset(&sigset, SIGUSR1);
 
 	while (fgets(buffer, bufsize, stdin)) {
 		register char *ptr = buffer;
@@ -79,10 +86,14 @@ int parse(struct Table table, struct Table cache, char *buffer, size_t bufsize) 
 
 		// Commit to cache and flush it if necessary
 		if (increment(cache, url)) {
-			if(inject(cache, table))
+			sigprocmask(SIG_BLOCK, &sigset, (sigset_t *) 0);
+
+			if (inject(cache, table))
 				return -1;
 
 			memset(cache.data, 0, storsize(cache));
+
+			sigprocmask(SIG_UNBLOCK, &sigset, (sigset_t *) 0);
 		}
 	}
 

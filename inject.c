@@ -126,14 +126,14 @@ int main(int argc, char *argv[]) {
 		int ret;
 		char errbuf[64];
 
-			if ((ret = regcomp(&preg, expression, REG_NOSUB))) {
-				regerror(ret, &preg, errbuf, sizeof errbuf);
-				fputs(errbuf, stderr);
-				return EXIT_FAILURE;
-			}
+		if ((ret = regcomp(&preg, expression, REG_NOSUB))) {
+			regerror(ret, &preg, errbuf, sizeof errbuf);
+			fputs(errbuf, stderr);
+			return EXIT_FAILURE;
+		}
 
-			while (read(0, &entry, sizeof (entry)) == sizeof (entry)) {
-				if (entry.value >= minimum && !regexec(&preg, entry.key, 0, (regmatch_t *) 0, 0)) {
+		while (read(0, &entry, sizeof (entry)) == sizeof (entry)) {
+			if (entry.value >= minimum && !regexec(&preg, entry.key, 0, (regmatch_t *) 0, 0)) {
 				if (commit(table, entry.key, entry.value)) {
 					perror("commit");
 					return EXIT_FAILURE;

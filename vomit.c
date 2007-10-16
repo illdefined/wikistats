@@ -19,6 +19,7 @@
  */
 
 #include <fcntl.h>
+#include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,6 +34,7 @@ int main(int argc, char *argv[]) {
 	char *path = DEF_DB;
 	int handle;
 	unsigned long long int minimum = 1ull;
+	const char *expression = (char *) 0;
 
 	register int iter;
 
@@ -49,8 +51,16 @@ int main(int argc, char *argv[]) {
 				 path = argv[iter];
 				 break;
 
+				case 'e':
+				 if (++iter >= argc) {
+				 	fputs(REQ_EXP, stderr);
+				 	return EXIT_FAILURE;
+				 }
+				 expression = argv[iter];
+				 break;
+
 				case 'h':
-				 printf(USAGE OPT_D OPT_H OPT_M OPT_V, argv[0]);
+				 printf(USAGE OPT_D OPT_E OPT_H OPT_M OPT_V, argv[0]);
 				 return EXIT_SUCCESS;
 
 				case 'm':
@@ -83,9 +93,28 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	while (read(handle, &entry, sizeof (entry)) == sizeof (entry)) {
-		if(entry.value >= minimum)
-			printf("%020llu %s\n", entry.value, entry.key);
+	if (expression) {
+		regex_t preg;
+		int ret;
+		char errbuf[64];
+
+		if ((ret = regcomp(&preg, expression, REG_NOSUB))) {
+			regerror(ret, &preg, errbuf, sizeof errbuf);
+			fputs(errbuf, stderr);
+			return EXIT_FAILURE;
+		}
+
+		while (read(handle, &entry, sizeof (entry)) == sizeof (entry)) {
+			if (entry.value >= minimum && !regexec(&preg, entry.key, 0, (regmatch_t *) 0, 0)) {
+				printf("%020llu %s\n", entry.value, entry.key);
+			}
+		}
+	}
+	else {
+		while (read(handle, &entry, sizeof (entry)) == sizeof (entry)) {
+			if (entry.value >= minimum)
+				printf("%020llu %s\n", entry.value, entry.key);
+		}
 	}
 
 	return EXIT_SUCCESS;
