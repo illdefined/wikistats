@@ -45,6 +45,7 @@ void signal_handler(int sig) {
 
 		case SIGUSR1:
 		 inject(cache, table);
+		 memset(cache.data, 0, storsize(cache));
 		 break;
 	}
 }
