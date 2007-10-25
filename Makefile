@@ -25,6 +25,7 @@ vomit: ${VOMIT}
 	strip $@
 
 clean:
-	rm -f devour inject vomit
+	rm -f devour inject vomit spawn cwikistats
+
 
 .PHONY: all clean
