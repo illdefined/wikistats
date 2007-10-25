@@ -48,6 +48,7 @@ int parse(struct Table table, struct Table cache, char *buffer, size_t bufsize) 
 	sigemptyset(&sigset);
 	sigaddset(&sigset, SIGTERM);
 	sigaddset(&sigset, SIGUSR1);
+	sigaddset(&sigset, SIGUSR2);
 
 	while (fgets(buffer, bufsize, stdin)) {
 		register char *ptr = buffer;

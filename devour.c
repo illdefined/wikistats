@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "common.h"
@@ -37,6 +38,32 @@
 static struct Table table = { (struct Entry *) 0, 2097152 };
 static struct Table cache = { (struct Entry *) 0, 131072 };
 
+static const char *path = DEF_DB;
+
+static long int pageSize;
+
+static int opendb(const char *path) {
+	char *rpath;
+
+	int handle;
+	time_t cur;
+	struct tm *loc;
+	size_t len = strlen(path) + 64;
+
+	rpath = malloc(len);
+	if (!rpath)
+		return -1;
+
+	time(&cur);
+	loc = localtime(&cur);
+	strftime(rpath, len, path, loc);
+
+	handle = open(rpath, O_RDWR | O_CREAT, PERMS);
+	free(rpath);
+
+	return handle;
+}
+
 static void signal_handler(int sig) {
 	switch (sig) {
 		case SIGTERM:
@@ -47,17 +74,47 @@ static void signal_handler(int sig) {
 		 inject(cache, table);
 		 memset(cache.data, 0, storsize(cache));
 		 break;
+
+		case SIGUSR2:
+		 inject(cache, table);
+
+	 	 int handle;
+		 if (munmap(table.data, storsize(table))) {
+		 	perror("munmap");
+		 	exit(EXIT_FAILURE);
+		 }
+
+		 handle = opendb(path);
+		 if (handle < 0) {
+		 	perror("opendb");
+		 	exit(EXIT_FAILURE);
+		 }
+	
+		 if (ftruncate(handle, align(storsize(table), (unsigned long int) pageSize))) {
+		 	perror("ftruncate");
+		 	exit(EXIT_FAILURE);
+		 }
+
+		 table.data = mmap(0, align(storsize(table), (unsigned long) pageSize),
+		 	PROT_READ | PROT_WRITE, MAP_SHARED, handle, 0);
+		 if (table.data == MAP_FAILED) {
+		 	perror("mmap");
+		 	exit(EXIT_FAILURE);
+		 }
+
+		 if (close(handle))
+		 	perror("close");
+
+		 memset(cache.data, 0, storsize(cache));
+		 break;
 	}
 }
 
 int main(int argc, char *argv[]) {
-	char *path = DEF_DB;
 	int handle;
 
 	size_t bufsize = 1024;
 	char *buffer;
-
-	long int pageSize;
 
 	register int iter;
 
@@ -128,9 +185,9 @@ int main(int argc, char *argv[]) {
 		perror("mlockall");
 
 	// Open database file
-	handle = open(path, O_RDWR | O_CREAT, PERMS);
+	handle = opendb(path);
 	if (handle < 0) {
-		perror("open");
+		perror("opendb");
 		return EXIT_FAILURE;
 	}
 
@@ -167,6 +224,7 @@ int main(int argc, char *argv[]) {
 
 	signal(SIGTERM, signal_handler);
 	signal(SIGUSR1, signal_handler);
+	signal(SIGUSR2, signal_handler);
 
 	if(parse(table, cache, buffer, bufsize)) {
 		perror("parse");
