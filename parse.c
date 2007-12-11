@@ -38,7 +38,7 @@
 	*ptr = '\0'; \
 	ptr++;
 
-int parse(struct Table table, struct Table cache, char *buffer, size_t bufsize) {
+int parse(struct Table *table, struct Table *cache, char *buffer, size_t bufsize) {
 	char *hostname, *sequence, *time, *reqtime, *ip, *squidStatus,
 	     *httpStatus, *size, *method, *url, *peer, *mime, *referrer,
 	     *forwarded, *useragent;
@@ -92,7 +92,7 @@ int parse(struct Table table, struct Table cache, char *buffer, size_t bufsize) 
 			if (inject(cache, table))
 				return -1;
 
-			memset(cache.data, 0, storsize(cache));
+			memset(cache->data, 0, storsize(cache->size));
 
 			sigprocmask(SIG_UNBLOCK, &sigset, (sigset_t *) 0);
 		}

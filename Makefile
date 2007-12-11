@@ -1,7 +1,7 @@
 CFLAGS ?= -Os -fomit-frame-pointer
 CFLAGS += -Wall -Wextra -Werror
 
-DEVOUR = devour.c hash.c parse.c table.c urldecode.c
+DEVOUR = devour.c hash.c fileio.c parse.c table.c urldecode.c
 INJECT = inject.c hash.c table.c
 SPAWN  = spawn.c
 VOMIT  = vomit.c hash.c table.c
@@ -25,7 +25,7 @@ vomit: ${VOMIT}
 	strip $@
 
 clean:
-	rm -f devour inject vomit spawn cwikistats
+	rm -f devour inject spawn vomit
 
 
 .PHONY: all clean

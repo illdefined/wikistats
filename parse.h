@@ -3,6 +3,6 @@
 
 #include "table.h"
 
-int parse(struct Table, struct Table, char *, size_t);
+int parse(struct Table *, struct Table *, char *, size_t);
 
 #endif

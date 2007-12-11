@@ -6,7 +6,7 @@
 #define USAGE "usage: %s [options]\n"
 #define OPT_B "  -b num    Input buffer size\n"
 #define OPT_C "  -c num    Cache buckets\n"
-#define OPT_D "  -d path   Path to database\n"
+#define OPT_D "  -d path   Database path\n"
 #define OPT_E "  -e exp    Regular expression\n"
 #define OPT_H "  -h        Issue this help\n"
 #define OPT_M "  -m num    Lower limit\n"

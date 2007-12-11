@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	table.size = statbuf.st_size / sizeof (struct Entry);
-	table.data = mmap(0, align(storsize(table), (unsigned long) pageSize),
+	table.data = mmap(0, align(storsize(table.size), (unsigned long) pageSize),
 		PROT_READ | PROT_WRITE, MAP_SHARED, handle, 0);
 	if (table.data == MAP_FAILED) {
 		perror("mmap");
@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
 
 		while (read(0, &entry, sizeof (entry)) == sizeof (entry)) {
 			if (entry.value >= minimum && !regexec(&preg, entry.key, 0, (regmatch_t *) 0, 0)) {
-				if (commit(table, entry.key, entry.value)) {
+				if (commit(&table, entry.key, entry.value)) {
 					perror("commit");
 					return EXIT_FAILURE;
 				}
@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
 	else {
 		while (read(0, &entry, sizeof (entry)) == sizeof (entry)) {
 			if (entry.value >= minimum) {
-				if (commit(table, entry.key, entry.value)) {
+				if (commit(&table, entry.key, entry.value)) {
 					perror("commit");
 					return EXIT_FAILURE;
 				}
