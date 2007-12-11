@@ -1,6 +1,6 @@
 /*
  * Copyright © MMVII
- * 	Mikael Voss <ffefd6 at haemoglobin dot org>
+ * 	Mikael Voss <mikael at koeln dot ccc dot de>
  *
  * Provided that these terms and disclaimer and all copyright notices
  * are retained or reproduced in an accompanying document, permission

@@ -8,7 +8,7 @@
 #define VERSION_STRING "cwikistats version %hhu.%hhu.%hhu\n" \
  "\n" \
  "Copyright © MMVII\n" \
- "  Mikael Voss <ffefd6 at haemoglobin dot org>\n" \
+ "  Mikael Voss <mikael at koeln dot ccc dot de>\n" \
  "  Leon Weber <leon at leonweber dot de>\n" \
  "\n" \
  "Provided that these terms and disclaimer and all copyright notices\n" \
