@@ -6,7 +6,7 @@
 
 #define flip(integer) (((integer) % 2) ? -1 : 1)
 
-inline struct Entry *lookup(struct Table *table, const char *key) {
+struct Entry *lookup(struct Table *table, const char *key) {
 	register unsigned long hashValue;
 	register struct Entry *entry;
 	register size_t iter;
@@ -64,13 +64,13 @@ int increment(struct Table *table, const char *key) {
 	return 0;
 }
 
-int inject(struct Table *src, struct Table *dest) {
+long int inject(struct Table *src, struct Table *dest) {
 	register struct Entry *iter = src->data;
 
 	while (iter < src->data + src->size) {
 		if (iter->value)
 			if (commit(dest, (char *) iter->key, iter->value))
-				return -1;
+				return -(iter - src->data);
 		iter++;
 	}
 
