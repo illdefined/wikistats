@@ -1,6 +1,3 @@
-#include <errno.h>
-#include <stdlib.h>
-
 #include "urldecode.h"
 
 const unsigned char hexChar[256] = {
@@ -44,19 +41,15 @@ int urldecode(unsigned char *low) {
 	while (*high) {
 		if (*high == '%') {
 			/* Check for premature string end */
-			if (!*++high || !*(high+1)) {
-				errno = EINVAL;
+			if (!*++high || !*(high+1))
 				return -1;
-			}
 
 			character = hexChar[*high] * 0x10;
 			character += hexChar[*++high];
 
 			/* Reject illegal characters */
-			if (character <= 0x1F) {
-				errno = EINVAL;
+			if (character <= 0x1F)
 				return -1;
-			}
 
 			*low = character;
 		}

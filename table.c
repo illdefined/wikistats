@@ -1,5 +1,9 @@
-#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
+#include <sys/mman.h>
 
 #include "hash.h"
 #include "table.h"
@@ -39,8 +43,6 @@ struct Entry *lookup(struct Table *table, const char *key) {
 			return entry;
 	}
 
-	errno = ENOMEM;
-
 	return (struct Entry *) 0;
 }
 
@@ -64,13 +66,69 @@ int increment(struct Table *table, const char *key) {
 	return 0;
 }
 
-long int inject(struct Table *src, struct Table *dest) {
-	register struct Entry *iter = src->data;
+int inject(struct Table *src, struct Table *dest) {
+	struct Entry *iter = src->data;
 
 	while (iter < src->data + src->size) {
 		if (iter->value)
 			if (commit(dest, (char *) iter->key, iter->value))
-				return -(iter - src->data);
+				return -1;
+		iter++;
+	}
+
+	return 0;
+}
+
+int injresize(struct Table *src, struct Table *dest, const char *path, char *temp) {
+	struct Entry *iter = src->data;
+
+	while (iter < src->data + src->size) {
+		if (iter->value)
+			if (commit(dest, (char *) iter->key, iter->value)) {
+				struct Table table;
+				table.size = dest->size * 2;
+
+				int fd = mkstemp(temp);
+				if (fd < 0)
+					return -1;
+
+				if (ftruncate(fd, table.size * sizeof (struct Entry))) {
+					close(fd);
+					return -1;
+				}
+
+				table.data = mmap(0, table.size * sizeof (struct Entry), PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+				if (table.data == (void *) -1) {
+					close(fd);
+					return -1;
+				}
+
+				close(fd);
+
+				if (inject(dest, &table)) {
+					munmap(table.data, table.size);
+					return -1;
+				}
+
+				if (commit(&table, (char *) iter->key, iter->value)) {
+					munmap(table.data, table.size);
+					return -1;
+				}
+
+				if (munmap(dest->data, dest->size)) {
+					munmap(table.data, table.size);
+					return -1;
+				}
+
+				dest->data = table.data;
+				dest->size = table.size;
+
+				if (unlink(path))
+					return -1;
+
+				if (rename(temp, path))
+					return -1;
+			}
 		iter++;
 	}
 

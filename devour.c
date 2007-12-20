@@ -1,4 +1,5 @@
 #include <pthread.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <buffer.h>
@@ -23,9 +24,41 @@
 	else \
 		buf[idx - 1] = '\0';
 
-static struct Table *cache;
+static char *path;
+static struct Table *table;
+static struct Table *flush_cache;
+static pthread_mutex_t flush_mutex;
+static pthread_cond_t flush_cond;
 
-void *parser(void *data) {
+void *flush(void *data) {
+loop:
+	pthread_mutex_lock(&flush_mutex);
+	pthread_cond_wait(&flush_cond, &flush_mutex);
+
+	char temp[] = "wikistats.XXXXXX";
+	if (injresize(flush_cache, table, path, temp))
+		exit(1);
+
+	memset(flush_cache->data, 0, flush_cache->size * sizeof (struct Entry));
+
+	pthread_mutex_unlock(&flush_mutex);
+
+	goto loop;
+}
+
+static void xchg(struct Table *t1, struct Table *t2) {
+	struct Table *tmp;
+
+	tmp = t1;
+	t1 = t2;
+	t2 = tmp;
+}
+
+int devour(int argc, char *argv[]) {
+	struct Table *cache;
+
+	/* TODO: Initialise mutex and condition, allocate caches and mmap table */
+
 	char buf[2048];
 	char *url;
 	int len;
@@ -55,15 +88,22 @@ void *parser(void *data) {
 
 		/* Commit to cache and flush it if necessary */
 		if (increment(cache, url)) {
-			/* ... */
+			pthread_mutex_lock(&flush_mutex);
+			xchg(cache, flush_cache);
+			pthread_mutex_unlock(&flush_mutex);
+			pthread_cond_signal(&flush_cond);
+
+			increment(cache, url);
 		}
 	}
 
-	return (void *) 0;
-}
+	pthread_mutex_lock(&flush_mutex);
+	xchg(cache, flush_cache);
+	pthread_mutex_unlock(&flush_mutex);
+	pthread_cond_signal(&flush_cond);
 
-int devour(int argc, char *argv[]) {
-	/* ... */
+	/* Wait for flush thread to finish */
+	pthread_mutex_lock(&flush_mutex);
 
 	return 0;
 }
