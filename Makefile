@@ -1,6 +1,6 @@
 include config.mk
 
-SRC = wikistats.c devour.c hash.c table.c urldecode.c
+SRC = wikistats.c devour.c vomit.c hash.c table.c urldecode.c
 
 wikistats: ${SRC}
 	${CC} ${CFLAGS} -o $@ ${SRC} ${LDFLAGS}

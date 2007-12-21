@@ -2,6 +2,7 @@
 #include <unistd.h>
 
 int devour(int, char*[]);
+int vomit(int, char*[]);
 
 static const char info[] = "[c]wikistats version 0.4.0\n\nAvailable applets:\n  devour\n  merge\n  vomit\n";
 
@@ -13,9 +14,9 @@ int main(int argc, char *argv[]) {
 		if (!strcmp(argv[1], "devour"))
 			return devour(--argc, ++argv);
 /*		else if (!strcmp(argv[1], "merge"))
-			;
-		else if (!strcmp(argv[1], "vomit"))
 			;*/
+		else if (!strcmp(argv[1], "vomit"))
+			return vomit(--argc, ++argv);
 		else {
 			err(info);
 			return 1;
