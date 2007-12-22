@@ -46,6 +46,16 @@ struct Entry *lookup(struct Table *table, const char *key) {
 	return (struct Entry *) 0;
 }
 
+void zero(struct Table *table) {
+	register struct Entry *iter = table->data;
+
+	while (iter < table->data + table->size) {
+		*(iter->key) = '\0';
+		iter->value = 0ull;
+		iter++;
+	}
+}
+
 int commit(struct Table *table, const char *key, unsigned long long int value) {
 	register struct Entry *entry = lookup(table, key);
 
@@ -67,7 +77,7 @@ int increment(struct Table *table, const char *key) {
 }
 
 int inject(struct Table *src, struct Table *dest) {
-	struct Entry *iter = src->data;
+	register struct Entry *iter = src->data;
 
 	while (iter < src->data + src->size) {
 		if (iter->value)
@@ -80,7 +90,7 @@ int inject(struct Table *src, struct Table *dest) {
 }
 
 int injresize(struct Table *src, struct Table *dest, const char *path, char *temp) {
-	struct Entry *iter = src->data;
+	register struct Entry *iter = src->data;
 
 	while (iter < src->data + src->size) {
 		if (iter->value)

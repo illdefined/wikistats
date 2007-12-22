@@ -14,6 +14,7 @@ struct Table {
 };
 
 struct Entry *lookup(struct Table *, const char *);
+void zero(struct Table *);
 int commit(struct Table *, const char *, unsigned long long int);
 int increment(struct Table *, const char *);
 int inject(struct Table *, struct Table *);
